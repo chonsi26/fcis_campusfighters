@@ -1,0 +1,3276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Fighters</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #000;
+        }
+        canvas {
+            border: 3px solid black;
+            display: block;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        #gameOver, #selectionScreen, #modeSelectionScreen, #roundDisplay, #winnerDisplay, #gameOverScreen, #settingsScreen, #startScreen, #loadingScreen, #pauseScreen, #mapSelectionScreen { /* Added #pauseScreen, #mapSelectionScreen */
+            position: absolute;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            color: rgb(255, 255, 255);
+            text-shadow: 3px 3px 6px rgb(0, 0, 0);
+            top: 100px;
+        }
+        #gameOver {
+            display: none;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 64px;
+            color: #f3a33d;
+            z-index: 2;
+        }
+        #roundDisplay {
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            color: yellow;
+            display: none;
+            z-index: 2;
+        }
+        #winnerDisplay {
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            color: yellow;
+            display: none;
+            z-index: 2;
+        }
+        #selectionScreen, #gameOverScreen, #settingsScreen, #pauseScreen, #mapSelectionScreen { /* Added #pauseScreen, #mapSelectionScreen */
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 25px;
+            border-radius: 15px;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 2;
+        }
+
+#modeSelectionScreen {
+    position: absolute;
+    top: 50%;
+    left: 20%;
+    transform: translate(-50%, -50%);
+    padding: 25px;
+    border-radius: 15px;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 2;
+    display: flex;
+    flex-direction: column; /* stack vertically */
+    align-items: center;
+    gap: 10px;
+}
+
+
+        #selectionScreen {
+            top: 45%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            height: 400px;
+            padding: 25px;
+            border-radius: 15px;
+            background: transparent;
+            overflow-y: auto;
+            z-index: 2;
+            scrollbar-width: none; /* For Firefox */
+            -ms-overflow-style: none; /* For Internet Explorer and Edge */
+        }
+
+        #selectionScreen::-webkit-scrollbar {
+            display: none; /* Hide scrollbar for WebKit browsers */
+        }
+
+        #selectionScreen h2, #modeSelectionScreen h2, #gameOverScreen h2, #settingsScreen h2, #startScreen h2, #loadingScreen h2, #pauseScreen h2, #mapSelectionScreen h2 { /* Added #pauseScreen h2, #mapSelectionScreen h2 */
+            margin: 0 0 25px;
+            font-size: 32px;
+            font-family: 'Orbitron', sans-serif;
+        }
+         #gameOverScreen button, #settingsScreen button, #pauseButton, #pauseScreen button, #mapSelectionScreen button { /* Added #pauseScreen button, #mapSelectionScreen button */
+            padding: 12px 25px;
+            margin: 6px;
+            font-size: 20px;
+            cursor: pointer;
+            background-color: #257fc1;
+            color: #f3a33d;
+            border: none;
+            border-radius: 6px;
+        }
+
+      #modeSelectionScreen button {
+    display: block;
+    padding: 12px 25px;
+    font-size: 20px;
+    font-family: 'Orbitron', sans-serif; /* KOF-style font */
+    font-weight: bold;
+    cursor: pointer;
+    background-color: transparent;
+    color: #f3a33d;
+    border: none;
+    border-radius: 6px;
+    width: 250px;
+    text-shadow: 2px 2px 0 #257fc1; /* outline-style shadow */
+    letter-spacing: 1px;
+    text-transform: uppercase; /* optional: makes it feel more arcade-like */
+}
+        #modeSelectionScreen button:hover, #gameOverScreen button:hover, #settingsScreen button:hover, #pauseButton:hover, #pauseScreen button:hover, #mapSelectionScreen button:hover { /* Added #pauseScreen button:hover, #mapSelectionScreen button:hover */
+            background-color: #103775;
+        }
+        #characterGrid {
+            display: grid;
+            grid-template-columns: repeat(10, 50px);
+            row-gap: 2px;
+            column-gap: 5px;
+            justify-items: center;
+        }
+        .character-portrait {
+            width: 50px;
+            height: 50px;
+            background-color: #333;
+            border: 3px solid #fff;
+            border-radius: 10px;
+            cursor: pointer;
+            overflow: hidden;
+            position: relative;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        .character-portrait img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .character-portrait:hover {
+            transform: scale(1.1);
+            border-color: #257fc1;
+        }
+        .character-portrait.selected {
+            border-color: #000000;
+            transform: scale(1.1);
+        }
+        .character-portrait.focused {
+            border-color: #f3a33d; /* Yellow border for keyboard focus */
+            transform: scale(1.1);
+        }
+        .character-portrait .character-name {
+            display: none;
+            font-family: 'Orbitron', sans-serif;
+            color: #f3a33d;;
+        }
+
+        
+        #gameOverScreen, #settingsScreen, #startScreen, #modeSelectionScreen, #loadingScreen, #pauseScreen, #mapSelectionScreen { /* Added #pauseScreen, #mapSelectionScreen */
+            display: none;
+        }
+        #pauseButton {
+            position: absolute;
+            top: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: Arial, sans-serif;
+            display: none;
+            z-index: 2;
+        }
+        #settingsScreen label {
+            display: block;
+            font-size: 20px;
+            margin: 15px 0 5px;
+        }
+        #settingsScreen input[type="range"] {
+            width: 200px;
+            cursor: pointer;
+        }
+        #settingsScreen .key-bind-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        #settingsScreen .key-bind-row label {
+            margin: 0;
+            width: 150px;
+            text-align: left;
+        }
+        #settingsScreen .key-bind-row input {
+            width: 80px;
+            text-align: center;
+            padding: 5px;
+            border-radius: 3px;
+            border: 1px solid #ccc;
+            background-color: #333;
+            color: white;
+            cursor: pointer;
+        }
+        #settingsScreen .controls-container {
+            display: flex;
+            justify-content: space-around;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        #settingsScreen .player-controls {
+            flex: 1;
+            min-width: 250px;
+        }
+        #startScreen {
+            width: 1200px;
+            height: 510px;
+            background: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2;
+        }
+        #startScreen h2 {
+            font-size: 48px;
+            color: #f3a33d;
+            animation: blink 0.8s step-end infinite;
+            margin-bottom: 20px;
+        }
+        #startScreen p {
+            font-size: 32px;
+            color: white;
+            animation: blink 0.8s step-end infinite;
+        }
+        #loadingScreen {
+            width: 1200px;
+            height: 510px;
+            background: transparent;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2;
+        }
+        #loadingScreen h2 {
+            font-size: 48px;
+            color: #ffffff;
+        }
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+        #gamemodebackground {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 1200px;
+            height: 510px;
+            background-image: url('gamemode_background.png');
+            background-size: cover;
+            background-position: center;
+            border: 3px solid black;
+            z-index: 0;
+            display: none;
+        }
+        #characterselectionbackground {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 1200px;
+            height: 510px;
+            background-image: url('gamemode_background.png');
+            background-size: cover;
+            background-position: center;
+            border: 3px solid black;
+            z-index: 0;
+            display: none;
+        }
+        /* New style for settings background */
+        #settingsbackground {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 1200px;
+            height: 510px;
+            background-image: url('gamemode_background.png'); /* Assuming you have a settings_background.png */
+            background-size: cover;
+            background-position: center;
+            border: 3px solid black;
+            z-index: 0;
+            display: none; /* Hidden by default */
+        }
+        #mapSelectionScreen {
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 800px;
+            height: 450px;
+            padding: 25px;
+            border-radius: 15px;
+            background: rgba(0, 0, 0, 0.8);
+            overflow-y: auto;
+            z-index: 2;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        #mapSelectionScreen::-webkit-scrollbar {
+            display: none;
+        }
+        #mapGrid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            padding: 10px;
+        }
+        .map-preview {
+            width: 250px;
+            height: 150px;
+            border: 3px solid #fff;
+            border-radius: 10px;
+            cursor: pointer;
+            overflow: hidden;
+            position: relative;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        .map-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .map-preview:hover, .map-preview.focused {
+            transform: scale(1.05);
+            border-color: #f3a33d;
+        }
+        .map-preview.selected {
+            border-color: #257fc1;
+        }
+        .map-name {
+            position: absolute;
+            bottom: 5px;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            font-size: 16px;
+            padding: 5px 0;
+        }
+        #mapPreviewDisplay {
+            width: 1200px;
+            height: 510px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-size: cover;
+            background-position: center;
+            border: 3px solid black;
+            z-index: 0;
+            display: none;
+        }
+        .back-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+            background-color: #257fc1; /* Red color for back button */
+            color: white;
+            border: none;
+            border-radius: 6px;
+            z-index: 3; /* Ensure it's above other elements */
+        }
+        .back-button:hover {
+            background-color: #103775;
+        }
+    </style>
+</head>
+<body>
+    <div id="gamemodebackground"></div>
+    <div id="characterselectionbackground"></div>
+    <div id="settingsbackground"></div> <!-- New div for settings background -->
+    <div id="mapPreviewDisplay"></div> <!-- New div for map preview -->
+    <canvas id="gameCanvas" width="1200" height="510"></canvas>
+    <div id="gameOver">Game Over!</div>
+    <div id="roundDisplay">Round 1, Fight!</div>
+    <div id="winnerDisplay"></div>
+    <div id="modeSelectionScreen">
+        <h2>Main Menu</h2>
+        <a href = "index3.html" style = "text-decoration: none;"><button>Story Mode</button></a>
+        <button onclick="selectGameMode('PlayerVSPlayer')">Player VS Player</button>
+        <button onclick="selectGameMode('PlayerVSCPU')">1 VS 1 Fight</button>
+        <button onclick="selectGameMode('CustomFight')">Custom Fight</button>
+        <button onclick="selectGameMode('TeamFight')">2 VS 2 Fight</button> <!-- New button for 2 VS 2 -->
+        <a href = "index2.html" style = "text-decoration: none;"><button>Death Rumble</button></a>
+        <a href = "index4.html" style = "text-decoration: none;"><button>Death Rumble (2 Players)</button></a>
+        <button onclick="showSettings()">Settings</button>
+    </div>
+    <div id="selectionScreen" style="display: none;">
+        <button class="back-button" onclick="goBackFromCharacterSelection()">Back</button>
+        <h2 id="selectionTitle">Player 1: Select Character</h2>
+        <div id="characterGrid"></div>
+    </div>
+    <div id="mapSelectionScreen">
+        <button class="back-button" onclick="goBackFromMapSelection()">Back</button>
+        <h2>Select Map</h2>
+        <div id="mapGrid"></div>
+        <button onclick="confirmMapSelection()">Start Fight</button>
+    </div>
+    <div id="gameOverScreen">
+        <h2 id="gameOverTitle"></h2>
+        <button onclick="restartMatch()">Restart Match</button>
+        <button onclick="goToMenu()">Main Menu</button>
+        <button onclick="quitGame()">Quit</button>
+    </div>
+    <div id="settingsScreen">
+        <label for="musicVolume">Background Music Volume</label>
+        <input type="range" id="musicVolume" min="0" max="100" value="100">
+        <label for="soundVolume">Sound Effects Volume</label>
+        <input type="range" id="soundVolume" min="0" max="100" value="100">
+
+        <div class="controls-container">
+            <div class="player-controls">
+                <h3>Player 1 Controls</h3>
+                <div class="key-bind-row">
+                    <label for="p1-left">Left:</label>
+                    <input type="text" id="p1-left" data-action="p1-left" disabled>
+                </div>
+                <div class="key-bind-row">
+                    <label for="p1-right">Right:</label>
+                    <input type="text" id="p1-right" data-action="p1-right" disabled>
+                </div>
+                <div class="key-bind-row">
+                    <label for="p1-jump">Jump:</label>
+                    <input type="text" id="p1-jump" data-action="p1-jump" disabled>
+                </div>
+                <div class="key-bind-row">
+                    <label for="p1-duck">Duck:</label>
+                    <input type="text" id="p1-duck" data-action="p1-duck" disabled>
+                </div>
+                <div class="key-bind-row">
+                    <label for="p1-punch">Punch:</label>
+                    <input type="text" id="p1-punch" data-action="p1-punch" disabled>
+                </div>
+                <div class="key-bind-row">
+                    <label for="p1-kick">Kick:</label>
+                    <input type="text" id="p1-kick" data-action="p1-kick" disabled>
+                </div>
+                <div class="key-bind-row">
+                    <label for="p1-block">Block:</label>
+                    <input type="text" id="p1-block" data-action="p1-block" disabled>
+                </div>
+            </div>
+
+            <div class="player-controls">
+                <h3>Player 2 Controls</h3>
+                <div class="key-bind-row">
+                    <label for="p2-left">Left:</label>
+                    <input type="text" id="p2-left" data-action="p2-left" readonly>
+                </div>
+                <div class="key-bind-row">
+                    <label for="p2-right">Right:</label>
+                    <input type="text" id="p2-right" data-action="p2-right" readonly>
+                </div>
+                <div class="key-bind-row">
+                    <label for="p2-jump">Jump:</label>
+                    <input type="text" id="p2-jump" data-action="p2-jump" readonly>
+                </div>
+                <div class="key-bind-row">
+                    <label for="p2-duck">Duck:</label>
+                    <input type="text" id="p2-duck" data-action="p2-duck" readonly>
+                </div>
+                <div class="key-bind-row">
+                    <label for="p2-punch">Punch:</label>
+                    <input type="text" id="p2-punch" data-action="p2-punch" readonly>
+                </div>
+                <div class="key-bind-row">
+                    <label for="p2-kick">Kick:</label>
+                    <input type="text" id="p2-kick" data-action="p2-kick" readonly>
+                </div>
+                <div class="key-bind-row">
+                    <label for="p2-block">Block:</label>
+                    <input type="text" id="p2-block" data-action="p2-block" readonly>
+                </div>
+            </div>
+        </div>
+
+        <button onclick="goBackToMenu()">Back</button>
+    </div>
+    <div id="pauseScreen"> <!-- New Pause Screen HTML -->
+        <h2>Paused</h2>
+        <button onclick="resumeGame()">Continue</button>
+        <button onclick="restartMatch()">Restart Match</button>
+        <button onclick="goToMenu()">Main Menu</button>
+    </div>
+    <div id="startScreen">
+        <p>Press Any Key to Start</p>
+    </div>
+    <div id="loadingScreen">
+        <h2>Loading...</h2>
+        <div id="container" style="width: 20%; max-width: 600px;">
+    <div id="loadingBarBackground" style="width: 100%; height: 30px; background: #f3a33d; border-radius: 5px; overflow: hidden;">
+      <div id="loadingBar" style="width: 0%; height: 100%; background: #257fc1;"></div>
+    </div>
+    <div id="percentage" style="margin-top: 10px; text-align: center;">0%</div>
+  </div>
+  <script>
+    const loadingBar = document.getElementById("loadingBar");
+const percentage = document.getElementById("percentage");
+
+let duration = 50;
+let current = 0;
+
+let interval = setInterval(() => {
+  current++;
+  let percent = (current / duration) * 100;
+  loadingBar.style.width = percent + "%";
+  percentage.textContent = Math.floor(percent) + "%";
+
+  if (current >= duration) {
+    clearInterval(interval);
+    percentage.textContent = "Done!";
+  }
+}, 1000);
+
+  </script>
+    </div>
+    <button id="pauseButton" onclick="togglePause()">Pause</button>
+    <audio id="punchSound" src="punch.mp3"></audio>
+    <audio id="kickSound" src="kick.mp3"></audio>
+    <audio id="menuMusic" src="menu_music.mp3" loop></audio>
+    <audio id="startSound" src="start_sound.mp3"></audio>
+    <audio id="focusSound" src="focus_sound.mp3"></audio>
+    <audio id="selectSound" src="select_sound.mp3"></audio>
+
+    <!-- Map-specific background music -->
+    <audio id="music_FCSIT Department" src="battle_music.mp3" loop></audio>
+    <audio id="music_Library" src="library_music.mp3" loop></audio>
+    <audio id="music_MPC" src="mpc_music.mp3" loop></audio>
+    <audio id="music_Student Center" src="student_center_music.mp3" loop></audio>
+    <audio id="music_IAS" src="ias_music.mp3" loop></audio>
+    <audio id="music_FIELD" src="field_music.mp3" loop></audio>
+    <audio id="music_House" src="house.mp3" loop></audio>
+    <audio id="music_Gate" src="gate_music.mp3" loop></audio>
+    <audio id="music_Admin" src="admin_music.mp3" loop></audio>
+
+    <audio id="chaunceyVoice" src="chauncey_voice.mp3"></audio>
+    <audio id="urielVoice" src="uriel_voice.mp3"></audio>
+    <audio id="mosotVoice" src="mosot_voice.mp3"></audio>
+    <audio id="ayraVoice" src="ayra_voice.mp3"></audio>
+    <audio id="leonardVoice" src="leonard_voice.mp3"></audio>
+    <audio id="nicaVoice" src="nica_voice.mp3"></audio>
+    <audio id="jaireneVoice" src="jairene_voice.mp3"></audio>
+    <audio id="lonelynVoice" src="lonelyn_voice.mp3"></audio>
+    <audio id="jennitVoice" src="jennit_voice.mp3"></audio>
+    <audio id="roselynVoice" src="roselyn_voice.mp3"></audio>
+    <audio id="polinarVoice" src="polinar_voice.mp3"></audio>
+    <audio id="earlVoice" src="earl_voice.mp3"></audio>
+    <audio id="jamesVoice" src="james_voice.mp3"></audio>
+    <audio id="shineVoice" src="shine_voice.mp3"></audio>
+    <audio id="marlieVoice" src="marlie_voice.mp3"></audio>
+    <audio id="parVoice" src="par_voice.mp3"></audio>
+    <audio id="isseyVoice" src="issey_voice.mp3"></audio>
+    <audio id="annalynVoice" src="annalyn_voice.mp3"></audio>
+    <audio id="markjeanVoice" src="markjean_voice.mp3"></audio>
+    <audio id="edrianVoice" src="edrian_voice.mp3"></audio>
+    <audio id="rushelVoice" src="rushel_voice.mp3"></audio>
+    <audio id="rotchieVoice" src="rotchie_voice.mp3"></audio>
+    <audio id="casasVoice" src="casas_voice.mp3"></audio>
+    <audio id="denjeVoice" src="denje_voice.mp3"></audio>
+    <audio id="nathanVoice" src="nathan_voice.mp3"></audio>
+    <audio id="getesVoice" src="getes_voice.mp3"></audio>
+    <audio id="sheilamaeVoice" src="sheilamae_voice.mp3"></audio>
+    <audio id="janroeVoice" src="janroe_voice.mp3"></audio>
+    <audio id="reymarkVoice" src="reymark_voice.mp3"></audio>
+    <audio id="ranceVoice" src="rance_voice.mp3"></audio>
+    <audio id="lemuelVoice" src="lemuel_voice.mp3"></audio>
+    <audio id="dianaVoice" src="diana_voice.mp3"></audio>
+    <audio id="johnmarkVoice" src="johnmark_voice.mp3"></audio>
+    <audio id="jemsonVoice" src="jemson_voice.mp3"></audio>
+    <audio id="kyleVoice" src="kyle_voice.mp3"></audio>
+    <audio id="mulletVoice" src="mullet_voice.mp3"></audio>
+    <audio id="laicaVoice" src="laica_voice.mp3"></audio>
+    <audio id="eneldaVoice" src="enelda_voice.mp3"></audio>
+    <audio id="salvadorVoice" src="salvador_voice.mp3"></audio>
+    <audio id="tomonVoice" src="tomon_voice.mp3"></audio>
+    <audio id="ronijeanVoice" src="ronijean_voice.mp3"></audio>
+    <audio id="arlinVoice" src="arlin_voice.mp3"></audio>
+    <audio id="hannahVoice" src="hannah_voice.mp3"></audio>
+    <audio id="jiofVoice" src="jiof_voice.mp3"></audio>
+    <audio id="denzielVoice" src="denziel_voice.mp3"></audio>
+    <audio id="ziosVoice" src="zios_voice.mp3"></audio>
+    <audio id="aguillonVoice" src="aguillon_voice.mp3"></audio>
+    <audio id="danielaVoice" src="daniela_voice.mp3"></audio>
+    <audio id="jelianVoice" src="jelian_voice.mp3"></audio>
+    <audio id="denverVoice" src="denver_voice.mp3"></audio>
+    <audio id="judemeerVoice" src="judemeer_voice.mp3"></audio>
+    <audio id="jelsonVoice" src="jelson_voice.mp3"></audio>
+    <audio id="cheaselyVoice" src="cheasely_voice.mp3"></audio>
+    <audio id="luspocVoice" src="luspoc_voice.mp3"></audio>
+    <audio id="junnelVoice" src="junnel_voice.mp3"></audio>
+    <audio id="junVoice" src="jun_voice.mp3"></audio>
+    <audio id="jileanVoice" src="jilean_voice.mp3"></audio>
+    <audio id="lannieVoice" src="lannie_voice.mp3"></audio>
+    <audio id="castaricoVoice" src="castarico_voice.mp3"></audio>
+    <audio id="michaelVoice" src="michael_voice.mp3"></audio>
+    <audio id="maejeanVoice" src="maejean_voice.mp3"></audio>
+    <audio id="dayandanVoice" src="dayandan_voice.mp3"></audio>
+    <audio id="armanVoice" src="arman_voice.mp3"></audio>
+    
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = true;
+        const gameOverText = document.getElementById('gameOver');
+        const selectionScreen = document.getElementById('selectionScreen');
+        const modeSelectionScreen = document.getElementById('modeSelectionScreen');
+        const selectionTitle = document.getElementById('selectionTitle');
+        const roundDisplay = document.getElementById('roundDisplay');
+        const winnerDisplay = document.getElementById('winnerDisplay');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const gameOverTitle = document.getElementById('gameOverTitle');
+        const pauseButton = document.getElementById('pauseButton');
+        const settingsScreen = document.getElementById('settingsScreen');
+        const startScreen = document.getElementById('startScreen');
+        const loadingScreen = document.getElementById('loadingScreen');
+        const pauseScreen = document.getElementById('pauseScreen'); // Get the new pause screen div
+        const mapSelectionScreen = document.getElementById('mapSelectionScreen'); // New map selection screen
+        const mapPreviewDisplay = document.getElementById('mapPreviewDisplay'); // New map preview display
+        const musicVolumeSlider = document.getElementById('musicVolume');
+        const soundVolumeSlider = document.getElementById('soundVolume');
+        const gameModeBackground = document.getElementById('gamemodebackground');
+        const characterSelectionBackground = document.getElementById('characterselectionbackground');
+        const settingsBackground = document.getElementById('settingsbackground'); // Get the new settings background div
+
+        const punchSound = document.getElementById('punchSound');
+        const kickSound = document.getElementById('kickSound');
+        const menuMusic = document.getElementById('menuMusic');
+        const startSound = document.getElementById('startSound');
+        const focusSound = document.getElementById('focusSound');
+        const selectSound = document.getElementById('selectSound');
+
+        // Map-specific music elements
+        const mapMusic = {
+            'FCSIT Department': document.getElementById('music_FCSIT Department'),
+            'Library': document.getElementById('music_Library'),
+            'MPC': document.getElementById('music_MPC'),
+            'Student Center': document.getElementById('music_Student Center'),
+            'IAS': document.getElementById('music_IAS'),
+            'FIELD': document.getElementById('music_FIELD'),
+            'House': document.getElementById('music_House'),
+            'Gate': document.getElementById('music_Gate'),
+            'Admin': document.getElementById('music_Admin')
+        };
+        let currentBattleMusic = null;
+
+        const characterVoices = {
+            'Chauncey': document.getElementById('chaunceyVoice'),
+            'Uriel': document.getElementById('urielVoice'),
+            'Mosot': document.getElementById('mosotVoice'),
+            'Ayra': document.getElementById('ayraVoice'),
+            'Leonard': document.getElementById('leonardVoice'),
+            'Nica': document.getElementById('nicaVoice'),
+            'Jairene': document.getElementById('jaireneVoice'),
+            'Lonelyn': document.getElementById('lonelynVoice'),
+            'Jennit': document.getElementById('jennitVoice'),
+            'Roselyn': document.getElementById('roselynVoice'),
+            'Nica P.': document.getElementById('polinarVoice'),
+            'Earl': document.getElementById('earlVoice'),
+            'James': document.getElementById('jamesVoice'),
+            'Shine': document.getElementById('shineVoice'),
+            'Marlie': document.getElementById('marlieVoice'),
+            'Par': document.getElementById('parVoice'),
+            'Issey': document.getElementById('isseyVoice'),
+            'Annalyn': document.getElementById('annalynVoice'),
+            'Mark Jean': document.getElementById('markjeanVoice'),
+            'Edrian': document.getElementById('edrianVoice'),
+            'Rushel': document.getElementById('rushelVoice'),
+            'Rotchie': document.getElementById('rotchieVoice'),
+            'Casas': document.getElementById('casasVoice'),
+            'Denje': document.getElementById('denjeVoice'),
+            'Nathan': document.getElementById('nathanVoice'),
+            'Getes': document.getElementById('getesVoice'),
+            'Sheila Mae': document.getElementById('sheilamaeVoice'),
+            'Janroe': document.getElementById('janroeVoice'),
+            'ReyMark': document.getElementById('reymarkVoice'),
+            'Rance': document.getElementById('ranceVoice'),
+            'Lemuel': document.getElementById('lemuelVoice'),
+            'Diana': document.getElementById('dianaVoice'),
+            'John Mark': document.getElementById('johnmarkVoice'),
+            'Jemson': document.getElementById('jemsonVoice'),
+            'Kyle': document.getElementById('kyleVoice'),
+            'Mullet': document.getElementById('mulletVoice'),
+            'Laica': document.getElementById('laicaVoice'),
+            'Enelda': document.getElementById('eneldaVoice'),
+            'Salvador': document.getElementById('salvadorVoice'),
+            'Tomon': document.getElementById('tomonVoice'),
+            'Ronijean': document.getElementById('ronijeanVoice'),
+            'Arlin': document.getElementById('arlinVoice'),
+            'Hannah': document.getElementById('hannahVoice'),
+            'Jiofh Fe': document.getElementById('jiofVoice'),
+            'Denziel': document.getElementById('denzielVoice'),
+            'Zios': document.getElementById('ziosVoice'),
+            'Lhi Rheyjyl': document.getElementById('aguillonVoice'),
+            'Daniela': document.getElementById('danielaVoice'),
+            'Jelian': document.getElementById('jelianVoice'),
+            'Denver': document.getElementById('denverVoice'),
+            'Judemeer': document.getElementById('judemeerVoice'),
+            'Jelson': document.getElementById('jelsonVoice'),
+            'Cheasely': document.getElementById('cheaselyVoice'),
+            'Luspoc': document.getElementById('luspocVoice'),
+            'Junnel': document.getElementById('junnelVoice'),
+            'Jun': document.getElementById('junVoice'),
+            'Jilean': document.getElementById('jileanVoice'),
+            'Lannie': document.getElementById('lannieVoice'),
+            'Hannah C.': document.getElementById('castaricoVoice'),
+            'Michael': document.getElementById('michaelVoice'),
+            'Mae Jean': document.getElementById('maejeanVoice'),
+            'Dayandan': document.getElementById('dayandanVoice'),
+            'arman': document.getElementById('armanVoice')
+        };
+
+        // Set initial volumes for all audio elements
+        menuMusic.volume = musicVolumeSlider.value / 100;
+        punchSound.volume = soundVolumeSlider.value / 100;
+        kickSound.volume = soundVolumeSlider.value / 100;
+        startSound.volume = soundVolumeSlider.value / 100;
+        focusSound.volume = soundVolumeSlider.value / 100;
+        selectSound.volume = soundVolumeSlider.value / 100;
+
+        Object.values(mapMusic).forEach(music => {
+            music.volume = musicVolumeSlider.value / 100;
+        });
+        Object.values(characterVoices).forEach(voice => {
+            voice.volume = soundVolumeSlider.value / 100;
+        });
+
+        musicVolumeSlider.addEventListener('input', () => {
+            menuMusic.volume = musicVolumeSlider.value / 100;
+            Object.values(mapMusic).forEach(music => {
+                music.volume = musicVolumeSlider.value / 100;
+            });
+        });
+        soundVolumeSlider.addEventListener('input', () => {
+            punchSound.volume = soundVolumeSlider.value / 100;
+            kickSound.volume = soundVolumeSlider.value / 100;
+            startSound.volume = soundVolumeSlider.value / 100;
+            focusSound.volume = soundVolumeSlider.value / 100;
+            selectSound.volume = soundVolumeSlider.value / 100;
+            Object.values(characterVoices).forEach(voice => {
+                voice.volume = soundVolumeSlider.value / 100;
+            });
+        });
+
+        // Default key bindings
+        let player1Keys = {
+            left: 'a',
+            right: 'd',
+            jump: 'w',
+            duck: 's',
+            punch: 'j',
+            kick: 'k',
+            block: 'h' // Added block key
+        };
+
+        let player2Keys = {
+            left: 'arrowleft',
+            right: 'arrowright',
+            jump: 'arrowup',
+            duck: 'arrowdown',
+            punch: '1',
+            kick: '2',
+            block: 'num3' // Added block key
+        };
+
+        let currentKeybindInput = null;
+
+        function loadKeybindings() {
+            const savedP1Keys = localStorage.getItem('player1Keys');
+            const savedP2Keys = localStorage.getItem('player2Keys');
+
+            if (savedP1Keys) {
+                player1Keys = JSON.parse(savedP1Keys);
+            }
+            if (savedP2Keys) {
+                player2Keys = JSON.parse(savedP2Keys);
+            }
+
+            // Update UI
+            document.getElementById('p1-left').value = player1Keys.left.toUpperCase();
+            document.getElementById('p1-right').value = player1Keys.right.toUpperCase();
+            document.getElementById('p1-jump').value = player1Keys.jump.toUpperCase();
+            document.getElementById('p1-duck').value = player1Keys.duck.toUpperCase();
+            document.getElementById('p1-punch').value = player1Keys.punch.toUpperCase();
+            document.getElementById('p1-kick').value = player1Keys.kick.toUpperCase();
+            document.getElementById('p1-block').value = player1Keys.block.toUpperCase(); // Update UI for block
+
+            document.getElementById('p2-left').value = player2Keys.left.toUpperCase();
+            document.getElementById('p2-right').value = player2Keys.right.toUpperCase();
+            document.getElementById('p2-jump').value = player2Keys.jump.toUpperCase();
+            document.getElementById('p2-duck').value = player2Keys.duck.toUpperCase();
+            document.getElementById('p2-punch').value = player2Keys.punch.toUpperCase();
+            document.getElementById('p2-kick').value = player2Keys.kick.toUpperCase();
+            document.getElementById('p2-block').value = player2Keys.block.toUpperCase(); // Update UI for block
+        }
+
+        function saveKeybindings() {
+            localStorage.setItem('player1Keys', JSON.stringify(player1Keys));
+            localStorage.setItem('player2Keys', JSON.stringify(player2Keys));
+        }
+
+        document.addEventListener('DOMContentLoaded', loadKeybindings);
+
+        document.querySelectorAll('#settingsScreen input[data-action]').forEach(input => {
+            input.addEventListener('click', (e) => {
+                currentKeybindInput = e.target;
+                currentKeybindInput.value = 'Press a key...';
+                document.addEventListener('keydown', handleKeybindInput, { once: true });
+            });
+        });
+
+        function handleKeybindInput(e) {
+            if (currentKeybindInput) {
+                const newKey = e.key.toLowerCase();
+                const action = currentKeybindInput.dataset.action;
+
+                // Prevent binding 'Enter' or 'Space' for character selection
+                if (newKey === 'enter' || newKey === ' ') {
+                    currentKeybindInput.value = currentKeybindInput.dataset.originalValue ? currentKeybindInput.dataset.originalValue.toUpperCase() : 'INVALID';
+                    currentKeybindInput = null;
+                    return;
+                }
+
+                // Check for duplicate bindings
+                let isDuplicate = false;
+                for (const player in player1Keys) {
+                    if (player1Keys[player] === newKey && `p1-${player}` !== action) {
+                        isDuplicate = true;
+                        break;
+                    }
+                }
+                if (!isDuplicate) {
+                    for (const player in player2Keys) {
+                        if (player2Keys[player] === newKey && `p2-${player}` !== action) {
+                            isDuplicate = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (isDuplicate) {
+                    alert(`Key "${newKey.toUpperCase()}" is already bound to another action. Please choose a different key.`);
+                    currentKeybindInput.value = currentKeybindInput.dataset.originalValue ? currentKeybindInput.dataset.originalValue.toUpperCase() : 'ERROR';
+                } else {
+                    currentKeybindInput.value = newKey.toUpperCase();
+                    currentKeybindInput.dataset.originalValue = newKey; // Store original value
+
+                    if (action.startsWith('p1-')) {
+                        player1Keys[action.substring(3)] = newKey;
+                    } else if (action.startsWith('p2-')) {
+                        player2Keys[action.substring(3)] = newKey;
+                    }
+                    saveKeybindings();
+                }
+                currentKeybindInput = null;
+            }
+        }
+
+
+        let gameMode = null;
+        let currentRound = 1;
+        let player1Wins = 0;
+        let player2Wins = 0;
+        let roundStartTime = null;
+        let roundDisplayDuration = 2000;
+        let roundInProgress = false;
+        let winnerDisplayTime = null;
+        let postRoundDuration = 5000;
+        let animationFrameId = null;
+        let lastUpdateTime = 0;
+        const targetDeltaTime = 1000 / 60;
+        let isPaused = false;
+        let gameStarted = false;
+        let selectedMap = null;
+
+        const maps = [
+            { name: 'FCSIT Department', image: 'background.png', music: 'music_FCSIT Department' },
+            { name: 'Library', image: 'library.png', music: 'music_Library' },
+            { name: 'MPC', image: 'mpc.png', music: 'music_MPC' },
+            { name: 'Student Center', image: 'studentcenter.png', music: 'music_Student Center' },
+            { name: 'IAS', image: 'ias.png', music: 'music_IAS' },
+            { name: 'FIELD', image: 'field.png', music: 'music_FIELD' },
+            { name: 'House', image: 'house.png', music: 'music_House' },
+            { name: 'Gate', image: 'gate.png', music: 'music_Gate' },
+            { name: 'Admin', image: 'admin.png', music: 'music_Admin' }
+        ];
+
+        const backgroundImage = new Image();
+        backgroundImage.src = 'background.png'; // Default background
+        backgroundImage.onerror = () => console.error('Failed to load background image');
+
+        const startScreenBackground = new Image();
+        startScreenBackground.src = 'start_screen.png';
+        startScreenBackground.onload = () => {
+            drawStartScreen();
+        };
+        startScreenBackground.onerror = () => console.error('Failed to load start screen background');
+
+        // Referee sprites
+        const refereeSprite = new Image();
+        refereeSprite.src = 'referee.png';
+        refereeSprite.onerror = () => console.error('Failed to load referee.png');
+
+        const refereePlayerWinSprite = new Image();
+        refereePlayerWinSprite.src = 'refereeplayerwin.png';
+        refereePlayerWinSprite.onerror = () => console.error('Failed to load refereeplayerwin.png');
+
+        const refereeOpponentWinSprite = new Image();
+        refereeOpponentWinSprite.src = 'refereeopponentwin.png';
+        refereeOpponentWinSprite.onerror = () => console.error('Failed to load refereeopponentwin.png');
+
+        let currentRefereeSprite = refereeSprite; // Default referee sprite
+
+        const characters = {
+            Chauncey: {
+                speed: 24,
+                jumpPower: -38,
+                punchDamage: 0.5,
+                kickDamage: 0.75,
+                color: 'blue'
+            },
+            Uriel: {
+                speed: 18,
+                jumpPower: -38,
+                punchDamage: 0.6,
+                kickDamage: 0.9,
+                color: 'purple'
+            },
+            'Mosot': {
+                speed: 21,
+                jumpPower: -38,
+                punchDamage: 0.55,
+                kickDamage: 0.8,
+                color: 'green'
+            },
+            'Ayra': {
+                speed: 22,
+                jumpPower: -40,
+                punchDamage: 0.52,
+                kickDamage: 0.78,
+                color: "red"
+            },
+            'Leonard': {
+                speed: 20,
+                jumpPower: -36,
+                punchDamage: 0.58,
+                kickDamage: 0.85,
+                color: 'orange'
+            },
+            'Nica': {
+                speed: 23,
+                jumpPower: -39,
+                punchDamage: 0.53,
+                kickDamage: 0.77,
+                color: 'pink'
+            },
+            'Jairene': {
+                speed: 19,
+                jumpPower: -37,
+                punchDamage: 0.57,
+                kickDamage: 0.82,
+                color: 'cyan'
+            },
+            'Lonelyn': {
+                speed: 20,
+                jumpPower: -38,
+                punchDamage: 0.56,
+                kickDamage: 0.84,
+                color: 'yellow'
+            },
+            'Jennit': {
+                speed: 22,
+                jumpPower: -38,
+                punchDamage: 0.54,
+                kickDamage: 0.81,
+                color: 'brown'
+            },
+            'Roselyn': {
+                speed: 21,
+                jumpPower: -39,
+                punchDamage: 0.55,
+                kickDamage: 0.80,
+                color: 'violet'
+            },
+            'Nica P.': {
+                speed: 22,
+                jumpPower: -38,
+                punchDamage: 0.54,
+                kickDamage: 0.79,
+                color: 'teal'
+            },
+
+
+            'Earl': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'James': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'Shine': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+
+            'Marlie': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'Par': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'Issey': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'Annalyn': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'Mark Jean': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'Edrian': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'Rushel': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'Rotchie': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'Casas': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'Denje': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'Nathan': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'Getes': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'Sheila Mae': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'Janroe': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'ReyMark': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'Rance': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'Lemuel': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'Diana': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'John Mark': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'Jemson': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'Kyle': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'Mullet': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'Laica': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'Enelda': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'Salvador': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'Tomon': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'Ronijean': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'Arlin': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'Hannah': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'Jiofh Fe': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'Denziel': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'Zios': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'Lhi Rheyjyl': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'Daniela': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'Jelian': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'Denver': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'Judemeer': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'Jelson': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'Cheasely': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'Luspoc': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'Junnel': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'Jun': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'Jilean': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'Lannie': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'Hannah C.': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'Michael': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'Mae Jean': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'Dayandan': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            },
+
+            'Arman': {
+                speed: 20,          // Adjust as needed
+                jumpPower: -38,     // Adjust as needed
+                punchDamage: 0.55,  // Adjust as needed
+                kickDamage: 0.8,    // Adjust as needed
+                color: 'gold'       // Fallback color if sprite fails to load
+            }
+
+        };
+
+        const spriteActions = [
+            'idle', 'punch', 'kick', 'ducking', 
+            'duckingkick', 'duckingpunch', 
+            'jump', 'jumpkick', 'jumppunch', 'defeated', 'portrait', // Existing actions
+            'defense', 'duckingdefense' // New block actions
+        ];
+        const sprites = {};
+        ['Chauncey', 'Uriel', 'Mosot', 'Ayra', 'Leonard', 'Nica', 'Jairene', 'Lonelyn', 'Jennit', 'Roselyn', 'Nica P.', 'Earl', 'James', 'Shine', 'Marlie', 'Par', 'Issey','Annalyn', 'Mark Jean', 'Edrian', 'Rushel', 'Rotchie', 'Casas', 'Denje', 'Nathan', 'Getes', 'Sheila Mae', 'Janroe', 'ReyMark', 'Rance', 'Lemuel', 'Diana', 'John Mark', 'Jemson', 'Kyle', 'Mullet', 'Laica', 'Enelda', 'Salvador' ,'Tomon', 'Ronijean', 'Arlin', 'Hannah', 'Jiofh Fe', 'Denziel', 'Zios', 'Lhi Rheyjyl', 'Daniela', 'Jelian', 'Denver', 'Judemeer', 'Jelson', 'Cheasely', 'Luspoc', 'Junnel' , 'Jun', 'Jilean', 'Lannie', 'Hannah C.', 'Michael', 'Mae Jean', 'Dayandan', 'Arman'].forEach(char => {
+            sprites[char] = {};
+            spriteActions.forEach(action => {
+                const img = new Image();
+                const spritePrefix = char === 'Mosot' ? 'mosot' : 
+                                    char === 'Ayra' ? 'ayra' : 
+                                    char === 'Leonard' ? 'leonard' : 
+                                    char === 'Nica' ? 'nica' : 
+                                    char === 'Jairene' ? 'jairene' : 
+                                    char === 'Lonelyn' ? 'lonelyn' : 
+                                    char === 'Jennit' ? 'jennit' : 
+                                    char === 'Roselyn' ? 'roselyn' : 
+                                    char === 'Nica P.' ? 'polinar' :
+                                    char === 'Earl' ? 'earl' :
+                                    char === 'James' ? 'james' :
+                                    char === 'Shine' ? 'shine' :
+                                    char === 'Marlie' ? 'marlie' :
+                                    char === 'Par' ? 'par' :
+                                    char === 'Issey' ? 'issey' :
+                                    char === 'Annalyn' ? 'annalyn' :
+                                    char === 'Mark Jean' ? 'markjean' :
+                                    char === 'Edrian' ? 'edrian' :
+                                    char === 'Rushel' ? 'rushel' :
+                                    char === 'Rotchie' ? 'rotchie' :
+                                    char === 'Casas' ? 'casas' :
+                                    char === 'Denje' ? 'denje' :
+                                    char === 'Nathan' ? 'nathan' :
+                                    char === 'Getes' ? 'getes' :
+                                    char === 'Sheila Mae' ? 'sheilamae' :
+                                    char === 'Janroe' ? 'janroe' :
+                                    char === 'ReyMark' ? 'reymark' :
+                                    char === 'Rance' ? 'rance' :
+                                    char === 'Lemuel' ? 'lemuel' :
+                                    char === 'Diana' ? 'diana' :
+                                    char === 'John Mark' ? 'johnmark' :
+                                    char === 'Jemson' ? 'jemson' :
+                                    char === 'Kyle' ? 'kyle' :
+                                    char === 'Mullet' ? 'mullet' :
+                                    char === 'Laica' ? 'laica' :
+                                    char === 'Enelda' ? 'enelda' :
+                                    char === 'Salvador' ? 'salvador' :
+                                    char === 'Tomon' ? 'tomon' :
+                                    char === 'Ronijean' ? 'ronijean' :
+                                    char === 'Arlin' ? 'arlin' : 
+                                    char === 'Hannah' ? 'hannah' :
+                                    char === 'Jiofh Fe' ? 'jiof' :
+                                    char === 'Denziel' ? 'denziel' :
+                                    char === 'Zios' ? 'zios' :
+                                    char === 'Lhi Rheyjyl' ? 'aguillon' :
+                                    char === 'Daniela' ? 'daniela' :
+                                    char === 'Jelian' ? 'jelian' :
+                                    char === 'Denver' ? 'denver' :
+                                    char === 'Judemeer' ? 'judemeer' :
+                                    char === 'Jelson' ? 'jelson' : 
+                                    char === 'Cheasely' ? 'cheasely' :
+                                    char === 'Luspoc' ? 'luspoc' : 
+                                    char === 'Junnel' ? 'junnel' :
+                                    char === 'Jun' ? 'jun' :
+                                    char === 'Jilean' ? 'jilean' :
+                                    char === 'Lannie' ? 'lannie' :
+                                    char === 'Hannah C.' ? 'castarico' :
+                                    char === 'Michael' ? 'michael' :
+                                    char === 'Mae Jean' ? 'maejean' :
+                                    char === 'Dayandan' ? 'dayandan' :
+                                    char === 'Arman' ? 'arman' : 
+                                    char.toLowerCase();
+                img.src = `${spritePrefix}${action === 'portrait' ? 'portrait' : action}.png`;
+                img.onerror = () => console.error(`Failed to load sprite: ${spritePrefix}${action}.png`);
+                sprites[char][action] = img;
+            });
+        });
+
+        let player1 = {
+            x: 300,
+            y: 255,
+            width: 150,
+            height: 255,
+            defeatedHeight: 128,
+            defeatedWidth: 192,
+            dy: 0,
+            gravity: 1.3,
+            jumping: false,
+            ducking: false,
+            backflip: false,
+            frontflip: false, 
+            backflipStartTime: null,
+            frontflipStartTime: null,
+            health: 100,
+            healthBars: 3,
+            attacking: null,
+            attackCooldown: 0,
+            direction: 'right',
+            name: null,
+            team: 'player', 
+            blocking: false, 
+            blockDuration: 0, 
+            walkCycle: 0 
+        };
+
+        let player2 = {
+            x: 750,
+            y: 255,
+            width: 150,
+            height: 255,
+            defeatedHeight: 128,
+            defeatedWidth: 192,
+            dy: 0,
+            gravity: 1.3,
+            jumping: false,
+            ducking: false,
+            backflip: false,
+            frontflip: false, // Added frontflip property
+            backflipStartTime: null,
+            frontflipStartTime: null, // Added frontflipStartTime
+            health: 100,
+            healthBars: 3,
+            attacking: null,
+            attackCooldown: 0,
+            direction: 'left',
+            name: null,
+            team: 'cpu', // Added team property
+            blocking: false, // New blocking property
+            blockDuration: 0, // Duration for block animation
+            walkCycle: 0 // New property for walk animation
+        };
+
+        // New players for 2 vs 2 mode
+        let player3 = { // Player 1's CPU partner
+            x: 150, // Position to the left of player1
+            y: 255,
+            width: 150,
+            height: 255,
+            defeatedHeight: 128,
+            defeatedWidth: 192,
+            dy: 0,
+            gravity: 1.3,
+            jumping: false,
+            ducking: false,
+            backflip: false,
+            frontflip: false, // Added frontflip property
+            backflipStartTime: null,
+            frontflipStartTime: null, // Added frontflipStartTime
+            health: 100,
+            healthBars: 3,
+            attacking: null,
+            attackCooldown: 0,
+            direction: 'right',
+            name: null,
+            team: 'player', // Same team as player1
+            blocking: false,
+            blockDuration: 0,
+            walkCycle: 0
+        };
+
+        let player4 = { // Player 2's CPU partner
+            x: 900, // Position to the right of player2
+            y: 255,
+            width: 150,
+            height: 255,
+            defeatedHeight: 128,
+            defeatedWidth: 192,
+            dy: 0,
+            gravity: 1.3,
+            jumping: false,
+            ducking: false,
+            backflip: false,
+            frontflip: false, // Added frontflip property
+            backflipStartTime: null,
+            frontflipStartTime: null, // Added frontflipStartTime
+            health: 100,
+            healthBars: 3,
+            attacking: null,
+            attackCooldown: 0,
+            direction: 'left',
+            name: null,
+            team: 'cpu', // Same team as player2
+            blocking: false,
+            blockDuration: 0,
+            walkCycle: 0
+        };
+
+
+        let screenShake = { intensity: 0, duration: 0 };
+
+        const keys = {}; // This will now be dynamically populated based on player1Keys and player2Keys
+
+        let prevKeys = {};
+        let focusedCharacterIndex = 0;
+        let characterPortraits = [];
+        let focusedMapIndex = 0;
+        let mapPreviews = [];
+
+        function drawStartScreen() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (startScreenBackground.complete && startScreenBackground.naturalWidth > 0) {
+                ctx.drawImage(startScreenBackground, 0, 0, canvas.width, canvas.height);
+            } else {
+                ctx.fillStyle = 'black';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+            startScreen.style.display = 'flex';
+            menuMusic.play().catch(e => console.log("Menu music play error:", e));
+        }
+
+        function startGame() {
+            if (!gameStarted) {
+                gameStarted = true;
+                startSound.currentTime = 0;
+                startSound.play().catch(e => console.log("Start sound play error:", e));
+                startScreen.style.display = 'none';
+                loadingScreen.style.display = 'flex';
+                setTimeout(() => {
+                    loadingScreen.style.display = 'none';
+                    modeSelectionScreen.style.display = 'block';
+                    gameModeBackground.style.display = 'block';
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                }, 50000);
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            const key = e.key.toLowerCase();
+            // Update the global 'keys' object based on current keybindings
+            for (const action in player1Keys) {
+                if (player1Keys[action] === key) {
+                    keys[key] = true;
+                }
+            }
+            for (const action in player2Keys) {
+                if (player2Keys[action] === key) {
+                    keys[key] = true;
+                }
+            }
+            // Also handle Enter/Space for character selection and map selection
+            if (key === 'enter' || key === ' ') {
+                keys[key] = true;
+            }
+
+            // Handle 'Escape' key for pausing/unpausing
+            if (key === 'escape' && gameMode !== null && !gameOverScreen.style.display === 'block' && !selectionScreen.style.display === 'block' && !modeSelectionScreen.style.display === 'block' && !settingsScreen.style.display === 'block' && !startScreen.style.display === 'flex' && !loadingScreen.style.display === 'flex' && !mapSelectionScreen.style.display === 'block') {
+                togglePause();
+            }
+
+            if (!gameStarted) {
+                startGame();
+            }
+            handleCharacterSelectionKeys();
+            handleMapSelectionKeys();
+        });
+
+        document.addEventListener('keyup', (e) => {
+            const key = e.key.toLowerCase();
+            // Update the global 'keys' object based on current keybindings
+            for (const action in player1Keys) {
+                if (player1Keys[action] === key) {
+                    keys[key] = false;
+                }
+            }
+            for (const action in player2Keys) {
+                if (player2Keys[action] === key) {
+                    keys[key] = false;
+                }
+            }
+            // Also handle Enter/Space for character selection and map selection
+            if (key === 'enter' || key === ' ') {
+                keys[key] = false;
+            }
+        });
+
+        function handleCharacterSelectionKeys() {
+            if (selectionScreen.style.display !== 'block') return;
+
+            const gridColumns = 10;
+            const totalCharacters = characterPortraits.length;
+
+            characterPortraits[focusedCharacterIndex].classList.remove('focused');
+
+            let keyProcessed = false;
+
+            if (keys[player1Keys.jump] && !prevKeys[player1Keys.jump]) { // Player 1 Jump (Up)
+                focusedCharacterIndex -= gridColumns;
+                if (focusedCharacterIndex < 0) focusedCharacterIndex += totalCharacters;
+                keyProcessed = true;
+            } else if (keys[player1Keys.duck] && !prevKeys[player1Keys.duck]) { // Player 1 Duck (Down)
+                focusedCharacterIndex += gridColumns;
+                if (focusedCharacterIndex >= totalCharacters) focusedCharacterIndex -= totalCharacters;
+                keyProcessed = true;
+            } else if (keys[player1Keys.left] && !prevKeys[player1Keys.left]) { // Player 1 Left
+                focusedCharacterIndex--;
+                if (focusedCharacterIndex < 0) focusedCharacterIndex = totalCharacters - 1;
+                keyProcessed = true;
+            } else if (keys[player1Keys.right] && !prevKeys[player1Keys.right]) { // Player 1 Right
+                focusedCharacterIndex++;
+                if (focusedCharacterIndex >= totalCharacters) focusedCharacterIndex = 0;
+                keyProcessed = true;
+            } else if ((keys.enter || keys[' ']) && !(prevKeys.enter || prevKeys[' '])) {
+                const selectedChar = characterPortraits[focusedCharacterIndex].dataset.character;
+                selectCharacter(selectedChar, characterPortraits[focusedCharacterIndex]);
+                return;
+            }
+
+            if (keyProcessed) {
+                characterPortraits[focusedCharacterIndex].classList.add('focused');
+                characterPortraits[focusedCharacterIndex].focus();
+                characterPortraits[focusedCharacterIndex].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                focusSound.currentTime = 0;
+                focusSound.play().catch(e => console.log("Focus sound play error:", e));
+            }
+        }
+
+        function handleMapSelectionKeys() {
+            if (mapSelectionScreen.style.display !== 'block') return;
+
+            const gridColumns = 3; // 3 maps per row
+            const totalMaps = maps.length;
+
+            mapPreviews[focusedMapIndex].classList.remove('focused');
+
+            let keyProcessed = false;
+
+            if (keys[player1Keys.jump] && !prevKeys[player1Keys.jump]) { // Player 1 Jump (Up)
+                focusedMapIndex -= gridColumns;
+                if (focusedMapIndex < 0) focusedMapIndex += totalMaps;
+                keyProcessed = true;
+            } else if (keys[player1Keys.duck] && !prevKeys[player1Keys.duck]) { // Player 1 Duck (Down)
+                focusedMapIndex += gridColumns;
+                if (focusedMapIndex >= totalMaps) focusedMapIndex -= totalMaps;
+                keyProcessed = true;
+            } else if (keys[player1Keys.left] && !prevKeys[player1Keys.left]) { // Player 1 Left
+                focusedMapIndex--;
+                if (focusedMapIndex < 0) focusedMapIndex = totalMaps - 1;
+                keyProcessed = true;
+            } else if (keys[player1Keys.right] && !prevKeys[player1Keys.right]) { // Player 1 Right
+                focusedMapIndex++;
+                if (focusedMapIndex >= totalMaps) focusedMapIndex = 0;
+                keyProcessed = true;
+            } else if ((keys.enter || keys[' ']) && !(prevKeys.enter || prevKeys[' '])) {
+                selectMap(maps[focusedMapIndex].name, mapPreviews[focusedMapIndex]);
+                return;
+            }
+
+            if (keyProcessed) {
+                mapPreviews[focusedMapIndex].classList.add('focused');
+                mapPreviews[focusedMapIndex].focus();
+                mapPreviews[focusedMapIndex].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                focusSound.currentTime = 0;
+                focusSound.play().catch(e => console.log("Focus sound play error:", e));
+                updateMapPreview(maps[focusedMapIndex].image);
+            }
+        }
+
+        function populateCharacterGrid() {
+            const characterGrid = document.getElementById('characterGrid');
+            characterGrid.innerHTML = '';
+            const charactersList = ['Chauncey', 'Uriel', 'Mosot', 'Ayra', 'Leonard', 'Nica', 'Jairene', 'Lonelyn', 'Jennit', 'Roselyn', 'Nica P.', 'Earl', 'James', 'Shine', 'Marlie', 'Par', 'Issey','Annalyn', 'Mark Jean', 'Edrian', 'Rushel', 'Rotchie', 'Casas', 'Denje', 'Nathan', 'Getes', 'Sheila Mae', 'Janroe', 'ReyMark', 'Rance', 'Lemuel', 'Diana', 'John Mark', 'Jemson', 'Kyle', 'Mullet', 'Laica', 'Enelda', 'Salvador', 'Tomon', 'Ronijean', 'Arlin', 'Hannah', 'Jiofh Fe', 'Denziel', 'Zios', 'Lhi Rheyjyl', 'Daniela', 'Jelian', 'Denver', 'Judemeer', 'Jelson', 'Cheasely', 'Luspoc', 'Junnel', 'Jun', 'Jilean', 'Lannie', 'Hannah C.', 'Michael', 'Mae Jean', 'Dayandan', 'Arman'];
+            
+            characterPortraits = [];
+            charactersList.forEach((char, index) => {
+                const portraitDiv = document.createElement('div');
+                portraitDiv.classList.add('character-portrait');
+                portraitDiv.dataset.character = char;
+                
+                const img = sprites[char]['portrait'];
+                if (img.complete && img.naturalWidth > 0) {
+                    const portraitImg = document.createElement('img');
+                    portraitImg.src = img.src;
+                    portraitImg.alt = char;
+                    portraitDiv.appendChild(portraitImg);
+                } else {
+                    portraitDiv.style.backgroundColor = characters[char].color;
+                }
+
+                // Add character name below the portrait
+                const nameSpan = document.createElement('span');
+                nameSpan.classList.add('character-name');
+                nameSpan.textContent = char;
+                portraitDiv.appendChild(nameSpan);
+                
+                portraitDiv.addEventListener('click', () => selectCharacter(char, portraitDiv));
+                portraitDiv.addEventListener('focus', () => {
+                    if (selectingPlayer === 1) {
+                        updateCharacterDisplay(char, null);
+                    } else if (selectingPlayer === 2) {
+                        updateCharacterDisplay(player1.name, char);
+                    } else if (selectingPlayer === 3) { // For Team Fight P1 Partner
+                        updateCharacterDisplayTeam(player1.name, char, null, null);
+                    } else if (selectingPlayer === 4) { // For Team Fight P2 Opponent
+                        updateCharacterDisplayTeam(player1.name, player3.name, char, null);
+                    } else if (selectingPlayer === 5) { // For Team Fight P2 Partner
+                        updateCharacterDisplayTeam(player1.name, player3.name, player2.name, char);
+                    }
+                    focusedCharacterIndex = characterPortraits.indexOf(portraitDiv);
+                    characterPortraits.forEach(el => el.classList.remove('focused'));
+                    portraitDiv.classList.add('focused');
+                    focusSound.currentTime = 0;
+                    focusSound.play().catch(e => console.log("Focus sound play error:", e));
+                });
+                portraitDiv.setAttribute('tabindex', '0');
+                characterGrid.appendChild(portraitDiv);
+                characterPortraits.push(portraitDiv);
+                
+                if (index === 0) {
+                    portraitDiv.classList.add('focused');
+                    portraitDiv.focus();
+                }
+            });
+        }
+
+        function populateMapGrid() {
+            const mapGrid = document.getElementById('mapGrid');
+            mapGrid.innerHTML = '';
+            mapPreviews = [];
+            maps.forEach((map, index) => {
+                const mapDiv = document.createElement('div');
+                mapDiv.classList.add('map-preview');
+                mapDiv.dataset.mapName = map.name;
+                mapDiv.dataset.mapImage = map.image;
+
+                const img = document.createElement('img');
+                img.src = map.image;
+                img.alt = map.name;
+                mapDiv.appendChild(img);
+
+                const nameSpan = document.createElement('span');
+                nameSpan.classList.add('map-name');
+                nameSpan.textContent = map.name;
+                mapDiv.appendChild(nameSpan);
+                
+                mapDiv.addEventListener('click', () => selectMap(map.name, mapDiv));
+                mapDiv.addEventListener('focus', () => {
+                    focusedMapIndex = mapPreviews.indexOf(mapDiv);
+                    mapPreviews.forEach(el => el.classList.remove('focused'));
+                    mapDiv.classList.add('focused');
+                    focusSound.currentTime = 0;
+                    focusSound.play().catch(e => console.log("Focus sound play error:", e));
+                    updateMapPreview(map.image);
+                });
+                mapDiv.setAttribute('tabindex', '0');
+                mapGrid.appendChild(mapDiv);
+                mapPreviews.push(mapDiv);
+
+                if (index === 0) {
+                    mapDiv.classList.add('focused');
+                    mapDiv.focus();
+                    updateMapPreview(map.image);
+                }
+            });
+        }
+
+        function updateMapPreview(imageSrc) {
+            mapPreviewDisplay.style.backgroundImage = `url('${imageSrc}')`;
+            mapPreviewDisplay.style.display = 'block';
+        }
+
+        function selectGameMode(mode) {
+            gameMode = mode;
+            modeSelectionScreen.style.display = 'none';
+            gameModeBackground.style.display = 'none';
+            selectionScreen.style.display = 'block';
+            characterSelectionBackground.style.display = 'block';
+            
+            selectingPlayer = 1;
+            player1Character = null; // Reset player1 character
+            player3Character = null; // Reset player3 character
+            player2Character = null; // Reset player2 character
+            player4Character = null; // Reset player4 character
+
+            if (gameMode === 'TeamFight') {
+                selectionTitle.textContent = 'Player 1: Select Character';
+            } else {
+                selectionTitle.textContent = 'Select Your Character';
+            }
+            
+            populateCharacterGrid();
+            focusedCharacterIndex = 0;
+            characterPortraits[0].classList.add('focused');
+            isPaused = false;
+            pauseButton.textContent = 'Pause';
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function showSettings() {
+            modeSelectionScreen.style.display = 'none';
+            gameModeBackground.style.display = 'none';
+            settingsScreen.style.display = 'block';
+            settingsBackground.style.display = 'block'; // Show settings background
+            loadKeybindings(); // Load current keybindings into the UI
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function goBackToMenu() {
+            settingsScreen.style.display = 'none';
+            settingsBackground.style.display = 'none'; // Hide settings background
+            modeSelectionScreen.style.display = 'block';
+            gameModeBackground.style.display = 'block';
+            menuMusic.play().catch(e => console.log("Menu music play error:", e));
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // New functions for back buttons
+        function goBackFromCharacterSelection() {
+            selectionScreen.style.display = 'none';
+            characterSelectionBackground.style.display = 'none';
+            modeSelectionScreen.style.display = 'block';
+            gameModeBackground.style.display = 'block';
+            selectingPlayer = 1; // Reset selecting player
+            player1Character = null; // Clear player 1 selection
+            player3Character = null; // Clear player 3 selection
+            player2Character = null; // Clear player 2 selection
+            player4Character = null; // Clear player 4 selection
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function goBackFromMapSelection() {
+            mapSelectionScreen.style.display = 'none';
+            mapPreviewDisplay.style.display = 'none';
+            selectionScreen.style.display = 'block';
+            characterSelectionBackground.style.display = 'block';
+            
+            if (gameMode === 'TeamFight') {
+                selectionTitle.textContent = 'Player 1: Select Character';
+                selectingPlayer = 1;
+                player1Character = null;
+                player3Character = null;
+                player2Character = null;
+                player4Character = null;
+            } else {
+                selectionTitle.textContent = 'Player 1: Select Character'; // Reset title
+                selectingPlayer = 1; // Reset to player 1 selection
+                player1Character = null; // Clear player 1 selection
+            }
+            selectedMap = null; // Clear selected map
+            populateCharacterGrid(); // Re-populate character grid and focus first character
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+
+        let selectingPlayer = 1;
+        let player1Character = null;
+        let player3Character = null; // For Team Fight: Player 1's CPU partner
+        let player2Character = null; // For Team Fight: Player 2's CPU opponent
+        let player4Character = null; // For Team Fight: Player 2's CPU partner
+
+        function selectCharacter(character, element) {
+            document.querySelectorAll('.character-portrait').forEach(el => {
+                el.classList.remove('selected', 'focused');
+            });
+            if (element) {
+                element.classList.add('selected', 'focused');
+                focusedCharacterIndex = characterPortraits.indexOf(element);
+            }
+            
+            selectSound.currentTime = 0;
+            selectSound.play().catch(e => console.log("Selection sound play error:", e));
+
+            const voice = characterVoices[character];
+            if (voice) {
+                voice.currentTime = 0;
+                voice.play().catch(e => console.log(`Voice play error for ${character}:`, e));
+            }
+
+            const allCharacters = Object.keys(characters);
+            let availableChars = allCharacters.filter(c => c !== character);
+
+            if (gameMode === 'PlayerVSPlayer') {
+                if (selectingPlayer === 1) {
+                    player1 = { ...player1, ...characters[character], name: character };
+                    player1Character = character;
+                    selectionTitle.textContent = 'Player 2: Select Character';
+                    selectingPlayer = 2;
+                    focusedCharacterIndex = 0;
+                    characterPortraits[0].classList.add('focused');
+                    characterPortraits[0].focus();
+                    updateCharacterDisplay(player1.name, characterPortraits[focusedCharacterIndex].dataset.character);
+                } else { // selectingPlayer === 2
+                    if (character === player1Character) {
+                        alert('Cannot select the same character as Player 1!');
+                        return;
+                    }
+                    player2 = { ...player2, ...characters[character], name: character };
+                    updateCharacterDisplay(player1.name, player2.name);
+                    showMapSelection();
+                }
+            } else if (gameMode === 'PlayerVSCPU') {
+                player1 = { ...player1, ...characters[character], name: character };
+                player1Character = character;
+                availableChars = allCharacters.filter(c => c !== character);
+                const opponentChar = availableChars[Math.floor(Math.random() * availableChars.length)];
+                player2 = { ...player2, ...characters[opponentChar], name: opponentChar };
+                selectSound.currentTime = 0;
+                selectSound.play().catch(e => console.log("Selection sound play error:", e));
+                const opponentVoice = characterVoices[opponentChar];
+                if (opponentVoice) {
+                    opponentVoice.currentTime = 0;
+                    opponentVoice.play().catch(e => console.log(`Voice play error for ${opponentChar}:`, e));
+                }
+                updateCharacterDisplay(player1.name, player2.name);
+                showMapSelection();
+            } else if (gameMode === 'CustomFight') {
+                if (selectingPlayer === 1) {
+                    player1 = { ...player1, ...characters[character], name: character };
+                    player1Character = character;
+                    selectionTitle.textContent = 'Player 2: Select Character';
+                    selectingPlayer = 2;
+                    focusedCharacterIndex = 0;
+                    characterPortraits[0].classList.add('focused');
+                    characterPortraits[0].focus();
+                    updateCharacterDisplay(player1.name, characterPortraits[focusedCharacterIndex].dataset.character);
+                } else { // selectingPlayer === 2
+                    if (character === player1Character) {
+                        alert('Cannot select the same character as Player 1 in Custom Fight!');
+                        return;
+                    }
+                    player2 = { ...player2, ...characters[character], name: character };
+                    updateCharacterDisplay(player1.name, player2.name);
+                    showMapSelection();
+                }
+            } else if (gameMode === 'TeamFight') {
+                if (selectingPlayer === 1) {
+                    player1 = { ...player1, ...characters[character], name: character };
+                    player1Character = character;
+                    selectionTitle.textContent = 'Player 1: Select Character';
+                    selectingPlayer = 3; // Select P1's CPU partner
+                    focusedCharacterIndex = 0;
+                    characterPortraits[0].classList.add('focused');
+                    characterPortraits[0].focus();
+                    updateCharacterDisplayTeam(player1.name, characterPortraits[focusedCharacterIndex].dataset.character, null, null);
+                } else if (selectingPlayer === 3) { // Selecting P1's CPU partner
+                    if (character === player1Character) {
+                        alert('Cannot select the same character as Player 1!');
+                        return;
+                    }
+                    player3 = { ...player3, ...characters[character], name: character };
+                    player3Character = character;
+                    selectionTitle.textContent = 'Player 2: Select Character';
+                    selectingPlayer = 4; // Select P2's CPU opponent
+                    focusedCharacterIndex = 0;
+                    characterPortraits[0].classList.add('focused');
+                    characterPortraits[0].focus();
+                    updateCharacterDisplayTeam(player1.name, player3.name, characterPortraits[focusedCharacterIndex].dataset.character, null);
+                } else if (selectingPlayer === 4) { // Selecting P2's CPU opponent
+                    if (character === player1Character || character === player3Character) {
+                        alert('Cannot select a character already chosen by your team!');
+                        return;
+                    }
+                    player2 = { ...player2, ...characters[character], name: character };
+                    player2Character = character;
+                    selectionTitle.textContent = 'Player 2: Select Character';
+                    selectingPlayer = 5; // Select P2's CPU partner
+                    focusedCharacterIndex = 0;
+                    characterPortraits[0].classList.add('focused');
+                    characterPortraits[0].focus();
+                    updateCharacterDisplayTeam(player1.name, player3.name, player2.name, characterPortraits[focusedCharacterIndex].dataset.character);
+                } else if (selectingPlayer === 5) { // Selecting P2's CPU partner
+                    if (character === player1Character || character === player3Character || character === player2Character) {
+                        alert('Cannot select a character already chosen!');
+                        return;
+                    }
+                    player4 = { ...player4, ...characters[character], name: character };
+                    player4Character = character;
+                    updateCharacterDisplayTeam(player1.name, player3.name, player2.name, player4.name);
+                    showMapSelection();
+                }
+            }
+        }
+
+        function showMapSelection() {
+            selectionScreen.style.display = 'none';
+            characterSelectionBackground.style.display = 'none';
+            mapSelectionScreen.style.display = 'block';
+            mapPreviewDisplay.style.display = 'block'; // Show map preview background
+            populateMapGrid();
+            focusedMapIndex = 0;
+            mapPreviews[0].classList.add('focused');
+            mapPreviews[0].focus();
+            updateMapPreview(maps[0].image); // Display first map preview
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function selectMap(mapName, element) {
+            document.querySelectorAll('.map-preview').forEach(el => {
+                el.classList.remove('selected', 'focused');
+            });
+            if (element) {
+                element.classList.add('selected', 'focused');
+                focusedMapIndex = mapPreviews.indexOf(element);
+            }
+            selectedMap = maps.find(map => map.name === mapName);
+            selectSound.currentTime = 0;
+            selectSound.play().catch(e => console.log("Selection sound play error:", e));
+            updateMapPreview(selectedMap.image);
+        }
+
+        function confirmMapSelection() {
+            if (!selectedMap) {
+                alert('Please select a map!');
+                return;
+            }
+            backgroundImage.src = selectedMap.image;
+            backgroundImage.onload = () => {
+                mapSelectionScreen.style.display = 'none';
+                mapPreviewDisplay.style.display = 'none';
+                menuMusic.pause();
+                menuMusic.currentTime = 0;
+
+                // Stop any currently playing battle music
+                if (currentBattleMusic) {
+                    currentBattleMusic.pause();
+                    currentBattleMusic.currentTime = 0;
+                }
+
+                // Start the selected map's music
+                currentBattleMusic = mapMusic[selectedMap.name];
+                if (currentBattleMusic) {
+                    currentBattleMusic.currentTime = 0;
+                    currentBattleMusic.play().catch(e => console.log(`Map music play error for ${selectedMap.name}:`, e));
+                } else {
+                    console.warn(`No music found for map: ${selectedMap.name}`);
+                }
+                
+                startRound();
+            };
+            backgroundImage.onerror = () => {
+                console.error(`Failed to load map image: ${selectedMap.image}`);
+                alert('Failed to load selected map. Please try again.');
+                // Fallback to default or handle error gracefully
+                backgroundImage.src = 'background.png';
+                mapSelectionScreen.style.display = 'none';
+                mapPreviewDisplay.style.display = 'none';
+                menuMusic.pause();
+                menuMusic.currentTime = 0;
+
+                // Stop any currently playing battle music
+                if (currentBattleMusic) {
+                    currentBattleMusic.pause();
+                    currentBattleMusic.currentTime = 0;
+                }
+                // Fallback to default battle music if selected map music fails
+                currentBattleMusic = mapMusic['FCSIT Department']; // Assuming 'FCSIT Department' has the default battle music
+                if (currentBattleMusic) {
+                    currentBattleMusic.currentTime = 0;
+                    currentBattleMusic.play().catch(e => console.log("Fallback battle music play error:", e));
+                }
+                startRound();
+            };
+        }
+
+        function resetMatch() {
+            currentRound = 1;
+            player1Wins = 0;
+            player2Wins = 0;
+            resetRound();
+        }
+
+        function resetRound() {
+            player1 = {
+                ...player1,
+                x: 300,
+                y: 255,
+                dy: 0,
+                jumping: false,
+                ducking: false,
+                backflip: false,
+                frontflip: false, // Reset frontflip
+                backflipStartTime: null,
+                frontflipStartTime: null, // Reset frontflipStartTime
+                health: 100,
+                healthBars: 3,
+                attacking: null,
+                attackCooldown: 0,
+                direction: 'right',
+                blocking: false,
+                blockDuration: 0,
+                walkCycle: 0
+            };
+            player2 = {
+                ...player2,
+                x: 750,
+                y: 255,
+                dy: 0,
+                jumping: false,
+                ducking: false,
+                backflip: false,
+                frontflip: false, // Reset frontflip
+                backflipStartTime: null,
+                frontflipStartTime: null, // Reset frontflipStartTime
+                health: 100,
+                healthBars: 3,
+                attacking: null,
+                attackCooldown: 0,
+                direction: 'left',
+                blocking: false,
+                blockDuration: 0,
+                walkCycle: 0
+            };
+            player3 = { // Reset P1's CPU partner
+                ...player3,
+                x: 150,
+                y: 255,
+                dy: 0,
+                jumping: false,
+                ducking: false,
+                backflip: false,
+                frontflip: false, // Reset frontflip
+                backflipStartTime: null,
+                frontflipStartTime: null, // Reset frontflipStartTime
+                health: 100,
+                healthBars: 3,
+                attacking: null,
+                attackCooldown: 0,
+                direction: 'right',
+                blocking: false,
+                blockDuration: 0,
+                walkCycle: 0
+            };
+            player4 = { // Reset P2's CPU partner
+                ...player4,
+                x: 900,
+                y: 255,
+                dy: 0,
+                jumping: false,
+                ducking: false,
+                backflip: false,
+                frontflip: false, // Reset frontflip
+                backflipStartTime: null,
+                frontflipStartTime: null, // Reset frontflipStartTime
+                health: 100,
+                healthBars: 3,
+                attacking: null,
+                attackCooldown: 0,
+                direction: 'left',
+                blocking: false,
+                blockDuration: 0,
+                walkCycle: 0
+            };
+
+            screenShake = { intensity: 0, duration: 0 };
+            roundInProgress = false;
+            roundStartTime = null;
+            winnerDisplayTime = null;
+            winnerDisplay.style.display = 'none';
+            gameOverText.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+            pauseScreen.style.display = 'none'; // Hide pause screen on round reset
+            isPaused = false;
+            pauseButton.textContent = 'Pause';
+            currentRefereeSprite = refereeSprite; // Reset referee sprite to default
+        }
+
+        function startRound() {
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+            }
+            resetRound();
+            roundDisplay.textContent = `Round ${currentRound}, Fight!`;
+            roundDisplay.style.display = 'block';
+            pauseButton.style.display = 'block';
+            roundStartTime = Date.now();
+            roundInProgress = false;
+            lastUpdateTime = performance.now();
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+
+        function restartMatch() {
+            resetMatch();
+            gameOverScreen.style.display = 'none';
+            pauseScreen.style.display = 'none'; // Hide pause screen
+            
+            // Restart current battle music
+            if (currentBattleMusic) {
+                currentBattleMusic.currentTime = 0;
+                currentBattleMusic.play().catch(e => console.log("Restart battle music play error:", e));
+            }
+            startRound();
+        }
+
+        function goToMenu() {
+            resetMatch();
+            gameOverScreen.style.display = 'none';
+            pauseScreen.style.display = 'none'; // Hide pause screen
+            selectionScreen.style.display = 'none';
+            characterSelectionBackground.style.display = 'none';
+            settingsBackground.style.display = 'none'; // Hide settings background when going to menu
+            mapSelectionScreen.style.display = 'none'; // Hide map selection screen
+            mapPreviewDisplay.style.display = 'none'; // Hide map preview
+            modeSelectionScreen.style.display = 'block';
+            gameModeBackground.style.display = 'block';
+            
+            // Stop current battle music
+            if (currentBattleMusic) {
+                currentBattleMusic.pause();
+                currentBattleMusic.currentTime = 0;
+                currentBattleMusic = null;
+            }
+            menuMusic.currentTime = 0;
+            menuMusic.play().catch(e => console.log("Menu music play error:", e));
+            selectingPlayer = 1;
+            selectionTitle.textContent = 'Select Your Character';
+            player1Character = null;
+            player3Character = null;
+            player2Character = null;
+            player4Character = null;
+            selectedMap = null; // Reset selected map
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+            }
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            pauseButton.style.display = 'none';
+            roundDisplay.style.display = 'none';
+            isPaused = false;
+            pauseButton.textContent = 'Pause';
+            gameMode = null;
+        }
+
+        function quitGame() {
+            window.close();
+        }
+
+        function togglePause() {
+            if (gameOverScreen.style.display === 'block' || modeSelectionScreen.style.display === 'block' || selectionScreen.style.display === 'block' || settingsScreen.style.display === 'block' || startScreen.style.display === 'flex' || loadingScreen.style.display === 'flex' || mapSelectionScreen.style.display === 'block') {
+                return;
+            }
+            isPaused = !isPaused;
+            if (isPaused) {
+                pauseScreen.style.display = 'block'; // Show pause screen
+                pauseButton.style.display = 'none'; // Hide pause button
+                if (currentBattleMusic) {
+                    currentBattleMusic.pause();
+                }
+            } else {
+                pauseScreen.style.display = 'none'; // Hide pause screen
+                pauseButton.style.display = 'block'; // Show pause button
+                if (currentBattleMusic) {
+                    currentBattleMusic.play().catch(e => console.log("Battle music play error:", e));
+                }
+                lastUpdateTime = performance.now();
+                animationFrameId = requestAnimationFrame(gameLoop);
+            }
+        }
+
+        function resumeGame() { // New function to resume game
+            togglePause(); // Simply call togglePause to unpause
+        }
+
+        function cpuAI(player, opponent, deltaTime, allowMovementOnly = false, teamMate = null) {
+            if (player.healthBars <= 0) return;
+            const distance = Math.abs(player.x - opponent.x);
+            const random = Math.random();
+
+            if (player.attackCooldown <= 0) {
+                player.attacking = null;
+            }
+            player.ducking = false;
+            player.backflip = false;
+            player.frontflip = false; // CPU doesn't do frontflips
+            player.backflipStartTime = null;
+            player.frontflipStartTime = null;
+            player.blocking = false; // CPU cannot block
+
+            player.direction = player.x < opponent.x ? 'right' : 'left';
+
+            let moving = false;
+            if (!allowMovementOnly) {
+                if (distance > 150 && !player.attacking) {
+                    const moveSpeed = (player.attacking ? player.speed * 0.5 : player.speed) * (deltaTime / targetDeltaTime);
+                    if (player.x < opponent.x) {
+                        player.x += moveSpeed;
+                        moving = true;
+                    } else {
+                        player.x -= moveSpeed;
+                        moving = true;
+                    }
+                }
+
+                if (random < 0.02 && !player.jumping && !player.ducking && !player.attacking) {
+                    player.dy = player.jumpPower;
+                    player.jumping = true;
+                }
+
+                if (distance < 150 && player.attackCooldown <= 0) {
+                    if (random < 0.5) {
+                        player.attacking = random < 0.25 ? 'punch' : 'kick';
+                        player.attackCooldown = 30;
+                    }
+                }
+
+                if (random < 0.05 && !player.jumping && !player.attacking) {
+                    player.ducking = true;
+                }
+            } else {
+                if (distance > 150) {
+                    const moveSpeed = player.speed * (deltaTime / targetDeltaTime);
+                    if (player.x < opponent.x) {
+                        player.x += moveSpeed;
+                        moving = true;
+                    } else {
+                        player.x -= moveSpeed;
+                        moving = true;
+                    }
+                }
+
+                if (random < 0.02 && !player.jumping && !player.ducking) {
+                    player.dy = player.jumpPower;
+                    player.jumping = true;
+                }
+
+                if (random < 0.05 && !player.jumping) {
+                    player.ducking = true;
+                }
+            }
+
+            // Update walk cycle for CPU
+            if (moving && !player.jumping && !player.ducking && !player.attacking && !player.blocking) {
+                player.walkCycle = (player.walkCycle + 0.1 * (deltaTime / targetDeltaTime)) % (2 * Math.PI);
+            } else {
+                player.walkCycle = 0; // Reset walk cycle when not walking
+            }
+
+            player.dy += player.gravity * (deltaTime / targetDeltaTime);
+            player.y += player.dy * (deltaTime / targetDeltaTime);
+            if (player.y > 255) {
+                player.y = 255;
+                player.dy = 0;
+                player.jumping = false;
+            }
+
+            if (player.attackCooldown > 0) {
+                player.attackCooldown -= (deltaTime / targetDeltaTime);
+                if (player.attackCooldown <= 15) player.attacking = null;
+            }
+
+            if (player.x < 50) player.x = 50;
+            if (player.x > canvas.width - player.width - 50) player.x = canvas.width - player.width - 50;
+        }
+
+        function drawHealthBars() {
+            // Player 1 and Player 3 (Team 1)
+            ctx.fillStyle = '#f3a33d';
+            ctx.fillRect(75, 25, 350, 30); // P1 Health Bar
+            ctx.fillStyle = '#257fc1';
+            ctx.fillRect(75, 25, player1.health * 3, 30);
+            ctx.strokeStyle = 'black';
+            ctx.strokeRect(75, 25, 350, 30);
+            ctx.fillStyle = 'white';
+            ctx.font = '24px Arial';
+            ctx.fillText(`P1: ${player1.name || 'Unknown'} (${player1.healthBars} Bars) Wins: ${player1Wins}`, 75, 22);
+
+            if (gameMode === 'TeamFight') {
+                ctx.fillStyle = '#f3a33d';
+                ctx.fillRect(75, 60, 350, 20); // P3 Health Bar (below P1)
+                ctx.fillStyle = '#257fc1';
+                ctx.fillRect(75, 60, player3.health * 3, 20);
+                ctx.strokeStyle = 'black';
+                ctx.strokeRect(75, 60, 350, 20);
+                ctx.fillStyle = 'white';
+                ctx.font = '18px Arial';
+                ctx.fillText(`P1 Partner: ${player3.name || 'Unknown'} (${player3.healthBars} Bars)`, 75, 57);
+            }
+
+            // Player 2 and Player 4 (Team 2)
+            ctx.fillStyle = '#f3a33d';
+            ctx.fillRect(775, 25, 350, 30); // P2 Health Bar
+            ctx.fillStyle = '#257fc1';
+            ctx.fillRect(775, 25, player2.health * 3, 30);
+            ctx.strokeStyle = 'black';
+            ctx.strokeRect(775, 25, 350, 30);
+            ctx.fillStyle = 'white';
+            ctx.font = '24px Arial';
+            ctx.fillText(`${gameMode === 'PlayerVSCPU' || gameMode === 'CustomFight' ? 'CPU' : 'Player 2'}: ${player2.name || 'Unknown'} (${player2.healthBars} Bars) Wins: ${player2Wins}`, 775, 22);
+
+            if (gameMode === 'TeamFight') {
+                ctx.fillStyle = '#f3a33d';
+                ctx.fillRect(775, 60, 350, 20); // P4 Health Bar (below P2)
+                ctx.fillStyle = '#257fc1';
+                ctx.fillRect(775, 60, player4.health * 3, 20);
+                ctx.strokeStyle = 'black';
+                ctx.strokeRect(775, 60, 350, 20);
+                ctx.fillStyle = 'white';
+                ctx.font = '18px Arial';
+                ctx.fillText(`P2 Partner: ${player4.name || 'Unknown'} (${player4.healthBars} Bars)`, 775, 57);
+            }
+        }
+
+        function checkCollision(attacker, opponent) {
+            const attackRange = attacker.direction === 'right' ? 
+                { x: attacker.x + attacker.width, y: attacker.y, width: 100, height: attacker.height } :
+                { x: attacker.x - 100, y: attacker.y, width: 100, height: attacker.height };
+            const opponentHitbox = {
+                x: opponent.x,
+                y: opponent.y,
+                width: opponent.width,
+                height: opponent.healthBars <= 0 ? opponent.defeatedHeight : opponent.height
+            };
+            const collides = attackRange.x < opponentHitbox.x + opponentHitbox.width &&
+                             attackRange.x + attackRange.width > opponentHitbox.x &&
+                             attackRange.y < opponentHitbox.y + opponentHitbox.height &&
+                             attackRange.y + attackRange.height > opponentHitbox.y;
+            return collides;
+        }
+
+        function triggerScreenShake(intensity = 3, duration = 6) {
+            screenShake.intensity = intensity;
+            screenShake.duration = duration;
+        }
+
+        function applyScreenShake() {
+            if (screenShake.duration > 0) {
+                const shakeX = (Math.random() - 0.5) * screenShake.intensity;
+                const shakeY = (Math.random() - 0.5) * screenShake.intensity;
+                ctx.translate(shakeX, shakeY);
+                screenShake.duration--;
+            }
+        }
+
+        function handleAttack(attacker, opponent, deltaTime) {
+            if (!roundInProgress || opponent.healthBars <= 0) return;
+
+            // Prevent friendly fire in TeamFight mode
+            if (gameMode === 'TeamFight' && attacker.team === opponent.team) {
+                return;
+            }
+
+            if (attacker.attacking && opponent.healthBars > 0) {
+                if (checkCollision(attacker, opponent)) {
+                    if (opponent.blocking) {
+                        // Opponent is blocking, no damage
+                        console.log(`${opponent.name} blocked the attack!`);
+                        return; 
+                    }
+
+                    let damage = attacker.attacking === 'punch' ? attacker.punchDamage : attacker.kickDamage;
+                    
+                    // Adjust damage for Player 1 vs CPU in 1v1 modes
+                    if ((gameMode === 'PlayerVSCPU' || gameMode === 'CustomFight') && attacker === player1) {
+                        damage *= 1.5;
+                    }
+                    // Adjust damage for Player 1 vs CPU in TeamFight mode (P1 vs P2/P4)
+                    if (gameMode === 'TeamFight' && attacker === player1 && (opponent === player2 || opponent === player4)) {
+                        damage *= 1.5;
+                    }
+
+                    opponent.health -= damage * (deltaTime / targetDeltaTime);
+                    if (attacker.attacking === 'punch') {
+                        punchSound.currentTime = 0;
+                        punchSound.play().catch(e => console.log("Punch sound play error:", e));
+                    } else if (attacker.attacking === 'kick') {
+                        kickSound.currentTime = 0;
+                        kickSound.play().catch(e => console.log("Kick sound play error:", e));
+                    }
+                    triggerScreenShake();
+                    if (opponent.health <= 0) {
+                        if (opponent.healthBars > 1) {
+                            opponent.health = 100;
+                            opponent.healthBars--;
+                        } else {
+                            opponent.health = 0;
+                            opponent.healthBars = 0;
+                        }
+                    }
+                }
+            }
+        }
+
+        function updatePlayer(player, opponent, playerKeybinds, deltaTime, allowAttacks = true) {
+            if (!roundInProgress && player.healthBars <= 0) return;
+            let isDuckingAttack = false;
+            let moving = false; // Track if the player is moving horizontally
+            
+            // Reset blocking state if block duration is over
+            if (player.blocking && player.blockDuration > 0) {
+                player.blockDuration -= (deltaTime / targetDeltaTime);
+                if (player.blockDuration <= 0) {
+                    player.blocking = false;
+                }
+            }
+
+            // Handle block input (pressed, not held)
+            if (player.team === 'player' && keys[playerKeybinds.block] && !prevKeys[playerKeybinds.block] && !player.attacking && !player.jumping && !player.backflip && !player.frontflip) {
+                player.blocking = true;
+                player.blockDuration = 15; // Block for a short duration (e.g., 15 frames)
+                player.attacking = null; // Cannot attack while blocking
+            }
+
+            if (allowAttacks && keys[playerKeybinds.duck]) {
+                if (keys[playerKeybinds.left] && keys[playerKeybinds.punch] && player.attackCooldown <= 0) {
+                    player.attacking = 'punch';
+                    player.direction = 'left';
+                    player.ducking = true;
+                    player.jumping = false;
+                    player.backflip = false;
+                    player.frontflip = false;
+                    player.backflipStartTime = null;
+                    player.frontflipStartTime = null;
+                    player.attackCooldown = 30;
+                    isDuckingAttack = true;
+                    player.blocking = false; // Cannot block while attacking
+                } else if (keys[playerKeybinds.left] && keys[playerKeybinds.kick] && player.attackCooldown <= 0) {
+                    player.attacking = 'kick';
+                    player.direction = 'left';
+                    player.ducking = true;
+                    player.jumping = false;
+                    player.backflip = false;
+                    player.frontflip = false;
+                    player.backflipStartTime = null;
+                    player.frontflipStartTime = null;
+                    player.attackCooldown = 30;
+                    isDuckingAttack = true;
+                    player.blocking = false;
+                } else if (keys[playerKeybinds.right] && keys[playerKeybinds.punch] && player.attackCooldown <= 0) {
+                    player.attacking = 'punch';
+                    player.direction = 'right';
+                    player.ducking = true;
+                    player.jumping = false;
+                    player.backflip = false;
+                    player.frontflip = false;
+                    player.backflipStartTime = null;
+                    player.frontflipStartTime = null;
+                    player.attackCooldown = 30;
+                    isDuckingAttack = true;
+                    player.blocking = false;
+                } else if (keys[playerKeybinds.right] && keys[playerKeybinds.kick] && player.attackCooldown <= 0) {
+                    player.attacking = 'kick';
+                    player.direction = 'right';
+                    player.ducking = true;
+                    player.jumping = false;
+                    player.backflip = false;
+                    player.frontflip = false;
+                    player.backflipStartTime = null;
+                    player.frontflipStartTime = null;
+                    player.attackCooldown = 30;
+                    isDuckingAttack = true;
+                    player.blocking = false;
+                }
+            }
+
+            if (allowAttacks && !player.blocking) { // Only allow attacks if not blocking
+                if (!isDuckingAttack && keys[playerKeybinds.punch] && player.attackCooldown <= 0) {
+                    player.attacking = 'punch';
+                    player.attackCooldown = 30;
+                } else if (!isDuckingAttack && keys[playerKeybinds.kick] && player.attackCooldown <= 0) {
+                    player.attacking = 'kick';
+                    player.attackCooldown = 30;
+                }
+            }
+
+            if (player.attackCooldown > 0) {
+                player.attackCooldown -= (deltaTime / targetDeltaTime);
+                if (player.attackCooldown <= 15) player.attacking = null;
+            }
+
+            if (!player.attacking && !player.backflip && !player.frontflip && !player.blocking) { // Cannot move while blocking
+                if (keys[playerKeybinds.left] && !player.ducking && !player.jumping) {
+                    player.x -= player.speed * (deltaTime / targetDeltaTime);
+                    player.direction = 'left';
+                    if (player.x < 0) player.x = 0;
+                    moving = true;
+                }
+                if (keys[playerKeybinds.right] && !player.ducking && !player.jumping) {
+                    player.x += player.speed * (deltaTime / targetDeltaTime);
+                    player.direction = 'right';
+                    if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
+                    moving = true;
+                }
+            }
+
+            // Update walk cycle
+            if (moving && !player.jumping && !player.ducking && !player.attacking && !player.blocking) {
+                player.walkCycle = (player.walkCycle + 0.1 * (deltaTime / targetDeltaTime)) % (2 * Math.PI);
+            } else {
+                player.walkCycle = 0; // Reset walk cycle when not walking
+            }
+
+            // Backflip logic (specific key combinations for backflip)
+            if (player === player1 && keys[player1Keys.jump] && keys[player1Keys.left] && !player.jumping && !player.ducking && !player.attacking && !player.backflip && !player.frontflip && !player.blocking) {
+                player.dy = player.jumpPower;
+                player.jumping = true;
+                player.backflip = true;
+                player.backflipStartTime = Date.now();
+                player.x -= player.speed * 2 * (deltaTime / targetDeltaTime);
+                player.direction = 'left';
+                if (player.x < 0) player.x = 0;
+            } 
+            // Frontflip logic (W + D for Player 1)
+            else if (player === player1 && keys[player1Keys.jump] && keys[player1Keys.right] && !player.jumping && !player.ducking && !player.attacking && !player.backflip && !player.frontflip && !player.blocking) {
+                player.dy = player.jumpPower;
+                player.jumping = true;
+                player.frontflip = true;
+                player.frontflipStartTime = Date.now();
+                player.x += player.speed * 2 * (deltaTime / targetDeltaTime);
+                player.direction = 'right';
+                if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
+            }
+            // Backflip logic for Player 2 (ArrowUp + ArrowRight)
+            else if (player === player2 && keys[player2Keys.jump] && keys[player2Keys.right] && !player.jumping && !player.ducking && !player.attacking && !player.backflip && !player.frontflip && !player.blocking) {
+                player.dy = player.jumpPower;
+                player.jumping = true;
+                player.backflip = true;
+                player.backflipStartTime = Date.now();
+                player.x += player.speed * 2 * (deltaTime / targetDeltaTime);
+                player.direction = 'right';
+                if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
+            }
+            // Frontflip logic for Player 2 (ArrowUp + ArrowLeft)
+            else if (player === player2 && keys[player2Keys.jump] && keys[player2Keys.left] && !player.jumping && !player.ducking && !player.attacking && !player.backflip && !player.frontflip && !player.blocking) {
+                player.dy = player.jumpPower;
+                player.jumping = true;
+                player.frontflip = true;
+                player.frontflipStartTime = Date.now();
+                player.x -= player.speed * 2 * (deltaTime / targetDeltaTime);
+                player.direction = 'left';
+                if (player.x < 0) player.x = 0;
+            }
+            // Regular jump
+            else if (keys[playerKeybinds.jump] && !player.jumping && !player.ducking && !player.backflip && !player.frontflip && !player.blocking) {
+                player.dy = player.jumpPower;
+                player.jumping = true;
+                if (keys[playerKeybinds.left]) {
+                    player.x -= player.speed * (deltaTime / targetDeltaTime);
+                    player.direction = 'left';
+                    if (player.x < 0) player.x = 0;
+                } else if (keys[playerKeybinds.right]) {
+                    player.x += player.speed * (deltaTime / targetDeltaTime);
+                    player.direction = 'right';
+                    if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
+                }
+            }
+
+            // Movement during backflip/frontflip
+            if (player.jumping && (player.backflip || player.frontflip)) {
+                if (player.backflip) {
+                    if (player === player1) {
+                        player.x -= (player.speed / 2) * (deltaTime / targetDeltaTime);
+                        if (player.x < 0) player.x = 0;
+                    } else if (player === player2) {
+                        player.x += (player.speed / 2) * (deltaTime / targetDeltaTime);
+                        if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
+                    }
+                } else if (player.frontflip) {
+                    if (player === player1) {
+                        player.x += (player.speed / 2) * (deltaTime / targetDeltaTime);
+                        if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
+                    } else if (player === player2) {
+                        player.x -= (player.speed / 2) * (deltaTime / targetDeltaTime);
+                        if (player.x < 0) player.x = 0;
+                    }
+                }
+            }
+
+            if (!isDuckingAttack && !player.blocking) { // Cannot duck while blocking
+                player.ducking = keys[playerKeybinds.duck] && !player.jumping && !player.backflip && !player.frontflip;
+            } else if (player.blocking && keys[playerKeybinds.duck]) { // Ducking while blocking
+                player.ducking = true;
+            } else {
+                player.ducking = false;
+            }
+
+
+            player.dy += player.gravity * (deltaTime / targetDeltaTime);
+            player.y += player.dy * (deltaTime / targetDeltaTime);
+            if (player.y > 255) {
+                player.y = 255;
+                player.dy = 0;
+                player.jumping = false;
+                if (player.backflip) {
+                    player.direction = player === player1 ? 'right' : 'left';
+                    player.backflip = false;
+                    player.backflipStartTime = null;
+                }
+                if (player.frontflip) {
+                    player.direction = player === player1 ? 'right' : 'left'; // Land facing right
+                    player.frontflip = false;
+                    player.frontflipStartTime = null;
+                }
+            }
+        }
+
+        function drawPlayer(player) {
+            let spriteKey;
+            let rotateAngle = 0;
+            let drawHeight = player.height;
+            let drawY = player.y;
+            let drawX = player.x;
+            let drawWidth = player.width;
+            let flip = player.direction === 'left';
+
+            // Apply walking animation offset
+            let walkOffset = 0;
+            if (player.walkCycle !== 0) {
+                walkOffset = Math.sin(player.walkCycle * 5) * 15; // Adjust 5 for intensity
+            }
+            drawY += walkOffset;
+
+            if (player.healthBars <= 0) {
+                spriteKey = 'defeated';
+                drawHeight = player.defeatedHeight;
+                drawWidth = player.defeatedWidth;
+                drawY = canvas.height - player.defeatedHeight;
+                player.jumping = false;
+                player.ducking = false;
+                player.backflip = false;
+                player.frontflip = false;
+                player.attacking = null;
+                player.blocking = false;
+            } else if (player.blocking) {
+                if (player.ducking) {
+                    spriteKey = 'duckingdefense';
+                } else {
+                    spriteKey = 'defense';
+                }
+            } else if (player.jumping) {
+                if (player.backflip) {
+                    spriteKey = 'jump';
+                    const backflipDuration = 1000;
+                    if (player.backflipStartTime) {
+                        const elapsed = Date.now() - player.backflipStartTime;
+                        const progress = Math.min(elapsed / backflipDuration, 1);
+                        rotateAngle = player === player1 ? -progress * 2 * Math.PI : progress * 2 * Math.PI;
+                    }
+                    flip = player === player1 ? false : true;
+                } else if (player.frontflip) { // Handle frontflip animation
+                    spriteKey = 'jump'; // Use jump sprite for rotation
+                    const frontflipDuration = 1000;
+                    if (player.frontflipStartTime) {
+                        const elapsed = Date.now() - player.frontflipStartTime;
+                        const progress = Math.min(elapsed / frontflipDuration, 1);
+                        rotateAngle = player === player1 ? progress * 2 * Math.PI : -progress * 2 * Math.PI; // Rotate forward
+                    }
+                    flip = player === player1 ? false : true; // Land facing right
+                }
+                else if (player.attacking === 'punch') {
+                    spriteKey = 'jumppunch';
+                } else if (player.attacking === 'kick') {
+                    spriteKey = 'jumpkick';
+                } else {
+                    spriteKey = 'jump';
+                }
+            } else if (player.ducking) {
+                if (player.attacking === 'punch') spriteKey = 'duckingpunch';
+                else if (player.attacking === 'kick') spriteKey = 'duckingkick';
+                else spriteKey = 'ducking';
+            } else {
+                if (player.attacking === 'punch') spriteKey = 'punch';
+                else if (player.attacking === 'kick') spriteKey = 'kick';
+                else spriteKey = 'idle';
+            }
+
+            const sprite = sprites[player.name][spriteKey];
+            if (sprite.complete && sprite.naturalWidth > 0) {
+                ctx.save();
+                ctx.translate(drawX + drawWidth / 2, drawY + drawHeight / 2);
+                if (flip) {
+                    ctx.scale(-1, 1);
+                }
+                if (rotateAngle !== 0) {
+                    ctx.rotate(rotateAngle);
+                }
+                ctx.drawImage(sprite, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
+                ctx.restore();
+            } else {
+                ctx.fillStyle = player.color;
+                ctx.fillRect(drawX, drawY, drawWidth, drawHeight);
+                const spritePrefix = player.name === 'Mosot' ? 'mosot' : 
+                                    player.name === 'Ayra' ? 'ayra' : 
+                                    player.name === 'Leonard' ? 'leonard' : 
+                                    player.name === 'Nica' ? 'nica' : 
+                                    player.name === 'Jairene' ? 'jairene' : 
+                                    player.name === 'Lonelyn' ? 'lonelyn' : 
+                                    player.name === 'Jennit' ? 'jennit' : 
+                                    player.name === 'Roselyn' ? 'roselyn' : 
+                                    player.name === 'Nica P.' ? 'polinar' :
+                                    char === 'Earl' ? 'earl' :
+                                    char === 'James' ? 'james' :
+                                    char === 'Shine' ? 'shine' :
+                                    char === 'Marlie' ? 'marlie' :
+                                    char === 'Par' ? 'par' :
+                                    char === 'Issey' ? 'issey' :
+                                    char === 'Annalyn' ? 'annalyn' :
+                                    char === 'Mark Jean' ? 'markjean' :
+                                    char === 'Edrian' ? 'edrian' :
+                                    char === 'Rushel' ? 'rushel' :
+                                    char === 'Rotchie' ? 'rotchie' :
+                                    char === 'Casas' ? 'casas' :
+                                    char === 'Denje' ? 'denje' :
+                                    char === 'Nathan' ? 'nathan' :
+                                    char === 'Getes' ? 'getes' :
+                                    char === 'Sheila Mae' ? 'sheilamae' :
+                                    char === 'Janroe' ? 'janroe' :
+                                    char === 'ReyMark' ? 'reymark' :
+                                    char === 'Rance' ? 'rance' :
+                                    char === 'Lemuel' ? 'lemuel' :
+                                    char === 'Diana' ? 'diana' :
+                                    char === 'John Mark' ? 'johnmark' :
+                                    char === 'Jemson' ? 'jemson' :
+                                    char === 'Kyle' ? 'kyle' :
+                                    char === 'Mullet' ? 'mullet' :
+                                    char === 'Laica' ? 'laica' :
+                                    char === 'Enelda' ? 'enelda' :
+                                    char === 'Salvador' ? 'salvador' :
+                                    char === 'Tomon' ? 'tomon' :
+                                    char === 'Ronijean' ? 'ronijean' :
+                                    char === 'Arlin' ? 'arlin' : 
+                                    char === 'Hannah' ? 'hannah' :
+                                    char === 'Jiofh Fe' ? 'jiof' :
+                                    char === 'Denziel' ? 'denziel' :
+                                    char === 'Zios' ? 'zios' :
+                                    char === 'Lhi Rheyjyl' ? 'aguillon' :
+                                    char === 'Daniela' ? 'daniela' :
+                                    char === 'Jelian' ? 'jelian' :
+                                    char === 'Denver' ? 'denver' :
+                                    char === 'Judemeer' ? 'judemeer' :
+                                    char === 'Jelson' ? 'jelson' : 
+                                    char === 'Cheasely' ? 'cheasely' :
+                                    char === 'Luspoc' ? 'luspoc' : 
+                                    char === 'Junnel' ? 'junnel' :
+                                    char === 'Jun' ? 'jun' :
+                                    char === 'Jilean' ? 'jilean' :
+                                    char === 'Lannie' ? 'lannie' :
+                                    char === 'Hannah C.' ? 'castarico' :
+                                    char === 'Michael' ? 'michael' :
+                                    char === 'Mae Jean' ? 'maejean' :
+                                    char === 'Dayandan' ? 'dayandan' :
+                                    char === 'Arman' ? 'arman' : 
+                                    player.name.toLowerCase();
+                console.warn(`High-res sprite not loaded: ${spritePrefix}${spriteKey}.png`);
+            }
+
+            // Removed the character name display during battle
+            // ctx.fillStyle = 'white';
+            // ctx.font = '28px Arial';
+            // ctx.fillText(player.name, drawX, drawY - 26);
+        }
+
+        function gameLoop(timestamp) {
+            if (!gameStarted) {
+                drawStartScreen();
+                prevKeys = { ...keys };
+                return;
+            }
+
+            if (modeSelectionScreen.style.display === 'block' || selectionScreen.style.display === 'block' || settingsScreen.style.display === 'block' || loadingScreen.style.display === 'flex' || mapSelectionScreen.style.display === 'block') {
+                prevKeys = { ...keys };
+                return;
+            }
+
+            if (isPaused) {
+                // When paused, only draw the current state and the pause screen
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.save();
+                applyScreenShake();
+                if (backgroundImage.complete && backgroundImage.naturalWidth > 0) {
+                    ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+                }
+                // Draw referee behind players
+                if (currentRefereeSprite.complete && currentRefereeSprite.naturalWidth > 0) {
+                    ctx.drawImage(currentRefereeSprite, (canvas.width - 150) / 2, 255, 150, 255); // Centered, same size as players
+                }
+                drawPlayer(player1);
+                drawPlayer(player2);
+                if (gameMode === 'TeamFight') {
+                    drawPlayer(player3);
+                    drawPlayer(player4);
+                }
+                drawHealthBars();
+                ctx.restore();
+                prevKeys = { ...keys };
+                animationFrameId = requestAnimationFrame(gameLoop);
+                return;
+            }
+
+            const deltaTime = Math.min(timestamp - lastUpdateTime, 100);
+            lastUpdateTime = timestamp;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.save();
+            applyScreenShake();
+
+            if (backgroundImage.complete && backgroundImage.naturalWidth > 0) {
+                ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+            }
+
+            // Draw referee behind players
+            if (currentRefereeSprite.complete && currentRefereeSprite.naturalWidth > 0) {
+                ctx.drawImage(currentRefereeSprite, (canvas.width - 150) / 2, 225, 150, 255); // Centered, same size as players
+            }
+
+            drawPlayer(player1);
+            drawPlayer(player2);
+            if (gameMode === 'TeamFight') {
+                drawPlayer(player3);
+                drawPlayer(player4);
+            }
+            drawHealthBars();
+
+            if (gameOverScreen.style.display === 'block') {
+                ctx.restore();
+                prevKeys = { ...keys };
+                animationFrameId = requestAnimationFrame(gameLoop);
+                return;
+            }
+
+            if (roundStartTime !== null && Date.now() - roundStartTime < roundDisplayDuration) {
+                roundDisplay.textContent = `Round ${currentRound}, Fight!`;
+                roundDisplay.style.display = 'block';
+                winnerDisplay.style.display = 'none';
+            } else if (winnerDisplayTime !== null && Date.now() - winnerDisplayTime < postRoundDuration) {
+                winnerDisplay.style.display = 'block';
+                roundDisplay.style.display = 'none';
+                roundInProgress = false;
+                // Keep players moving if they are still alive during post-round display
+                if (player1.healthBars > 0) {
+                    updatePlayer(player1, player2, player1Keys, deltaTime, false);
+                }
+                if (player2.healthBars > 0) {
+                    if (gameMode === 'PlayerVSCPU' || gameMode === 'CustomFight') {
+                        cpuAI(player2, player1, deltaTime, true);
+                    } else {
+                        updatePlayer(player2, player1, player2Keys, deltaTime, false);
+                    }
+                }
+                if (gameMode === 'TeamFight') {
+                    if (player3.healthBars > 0) {
+                        cpuAI(player3, player2, deltaTime, true, player1); // P3 targets P2
+                    }
+                    if (player4.healthBars > 0) {
+                        cpuAI(player4, player1, deltaTime, true, player2); // P4 targets P1
+                    }
+                }
+            } else {
+                roundDisplay.style.display = 'none';
+                winnerDisplay.style.display = 'none';
+                roundInProgress = true;
+
+                if (gameMode === 'PlayerVSCPU' || gameMode === 'CustomFight') {
+                    cpuAI(player2, player1, deltaTime);
+                    updatePlayer(player1, player2, player1Keys, deltaTime);
+                } else if (gameMode === 'PlayerVSPlayer') {
+                    updatePlayer(player1, player2, player1Keys, deltaTime);
+                    updatePlayer(player2, player1, player2Keys, deltaTime);
+                } else if (gameMode === 'TeamFight') {
+                    // Player 1 controls player1
+                    updatePlayer(player1, player2, player1Keys, deltaTime); 
+                    // CPU for player3 (P1's partner)
+                    cpuAI(player3, player2, deltaTime, false, player1); // P3 targets P2
+                    // CPU for player2 (P2's opponent)
+                    cpuAI(player2, player1, deltaTime, false, player4); // P2 targets P1
+                    // CPU for player4 (P2's partner)
+                    cpuAI(player4, player1, deltaTime, false, player2); // P4 targets P1
+                }
+
+                // Handle attacks for all active players
+                if (gameMode === 'TeamFight') {
+                    handleAttack(player1, player2, deltaTime);
+                    handleAttack(player1, player4, deltaTime); // P1 attacks P2's partner
+                    handleAttack(player3, player2, deltaTime); // P3 attacks P2
+                    handleAttack(player3, player4, deltaTime); // P3 attacks P2's partner
+
+                    handleAttack(player2, player1, deltaTime);
+                    handleAttack(player2, player3, deltaTime); // P2 attacks P1's partner
+                    handleAttack(player4, player1, deltaTime); // P4 attacks P1
+                    handleAttack(player4, player3, deltaTime); // P4 attacks P1's partner
+                } else {
+                    handleAttack(player1, player2, deltaTime);
+                    handleAttack(player2, player1, deltaTime);
+                }
+            }
+
+            ctx.restore();
+
+            let team1Defeated = false;
+            let team2Defeated = false;
+
+            if (gameMode === 'TeamFight') {
+                team1Defeated = (player1.healthBars <= 0 && player3.healthBars <= 0);
+                team2Defeated = (player2.healthBars <= 0 && player4.healthBars <= 0);
+            } else {
+                team1Defeated = (player1.healthBars <= 0);
+                team2Defeated = (player2.healthBars <= 0);
+            }
+
+            if (team1Defeated || team2Defeated) {
+                if (winnerDisplayTime === null) {
+                    roundInProgress = false;
+                    winnerDisplayTime = Date.now();
+                    if (team1Defeated) {
+                        player2Wins++;
+                        
+                        currentRefereeSprite = refereeOpponentWinSprite; // Opponent wins
+                    } else {
+                        player1Wins++;
+                        
+                        currentRefereeSprite = refereePlayerWinSprite; // Player wins
+                    }
+                }
+                if (winnerDisplayTime !== null && Date.now() - winnerDisplayTime >= postRoundDuration) {
+                    if (player1Wins === 2 || player2Wins === 2) { // Best of 3
+                        showGameOverScreen();
+                    } else {
+                        currentRound++;
+                        startRound();
+                    }
+                }
+            }
+
+            prevKeys = { ...keys };
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+
+        function showGameOverScreen() {
+            gameOverText.style.display = 'block';
+            if (currentBattleMusic) {
+                currentBattleMusic.pause();
+                currentBattleMusic.currentTime = 0;
+            }
+            if (gameMode === 'TeamFight') {
+                gameOverText.textContent = player1Wins > player2Wins ? `Team 1 Wins the Match!` : `Team 2 Wins the Match!`;
+                gameOverTitle.textContent = player1Wins > player2Wins ? `Team 1 Wins!` : `Team 2 Wins!`;
+            } else if (gameMode === 'PlayerVSCPU' || gameMode === 'CustomFight') {
+                gameOverText.textContent = player1Wins > player2Wins ? `Player 1 (${player1.name}) Wins the Match!` : `CPU (${player2.name}) Wins the Match!`;
+                gameOverTitle.textContent = player1Wins > player2Wins ? `Player 1 (${player1.name}) Wins!` : `CPU (${player2.name}) Wins!`;
+            } else {
+                gameOverText.textContent = player1Wins > player2Wins ? `Player 1 (${player1.name}) Wins the Match!` : `Player 2 (${player2.name}) Wins the Match!`;
+                gameOverTitle.textContent = player1Wins > player2Wins ? `Player 1 (${player1.name}) Wins!` : `Player 2 (${player2.name}) Wins!`;
+            }
+            gameOverScreen.style.display = 'block';
+            pauseButton.style.display = 'none';
+            roundDisplay.style.display = 'none';
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+            }
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+
+        function updateCharacterDisplay(player1Char, player2Char) {
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (player1Char) {
+                const player1Sprite = sprites[player1Char]['idle'];
+                if (player1Sprite.complete && player1Sprite.naturalWidth > 0) {
+                    ctx.drawImage(player1Sprite, 10, 60, 370, 450);
+                }
+                ctx.fillStyle = 'yellow';
+                ctx.font = '28px Orbitron';
+                ctx.textAlign = 'left';
+                ctx.fillText(player1Char, 135, 280); // Display name above sprite
+            }
+
+            if (player2Char) {
+                const player2Sprite = sprites[player2Char]['idle'];
+                if (player2Sprite.complete && player2Sprite.naturalWidth > 0) {
+                    ctx.drawImage(player2Sprite, 800, 60, 370, 450);
+                }
+                ctx.fillStyle = 'yellow';
+                ctx.font = '28px Orbitron';
+                ctx.textAlign = 'right';
+                ctx.fillText(player2Char, canvas.width - 135, 280); // Display name above sprite
+            }
+
+            ctx.fillStyle = 'yellow';
+            ctx.font = '32px Orbitron';
+            ctx.textAlign = 'center';
+            ctx.fillText('', canvas.width / 2, 100);
+        }
+
+        // New function for Team Fight character display
+        function updateCharacterDisplayTeam(p1Char, p3Char, p2Char, p4Char) {
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Team 1 (Player 1 and Partner)
+            if (p1Char) {
+                const p1Sprite = sprites[p1Char]['idle'];
+                if (p1Sprite.complete && p1Sprite.naturalWidth > 0) {
+                    ctx.drawImage(p1Sprite, 1, 30, 370, 450); // Smaller size for multiple characters
+                }
+                ctx.fillStyle = 'yellow';
+                ctx.font = '24px Orbitron';
+                ctx.textAlign = 'left';
+                ctx.fillText(p1Char, 1, 25);
+            }
+            if (p3Char) {
+                const p3Sprite = sprites[p3Char]['idle'];
+                if (p3Sprite.complete && p3Sprite.naturalWidth > 0) {
+                    ctx.drawImage(p3Sprite, 10, 100, 370, 450); // Position next to P1
+                }
+                ctx.fillStyle = 'yellow';
+                ctx.font = '24px Orbitron';
+                ctx.textAlign = 'left';
+                ctx.fillText(p3Char, 10, 95);
+            }
+
+            // Team 2 (Opponent and Partner)
+            if (p2Char) {
+                const p2Sprite = sprites[p2Char]['idle'];
+                if (p2Sprite.complete && p2Sprite.naturalWidth > 0) {
+                    ctx.drawImage(p2Sprite, 791, 30, 370, 450); // Position for opponent
+                }
+                ctx.fillStyle = 'yellow';
+                ctx.font = '24px Orbitron';
+                ctx.textAlign = 'right';
+                ctx.fillText(p2Char, canvas.width - 1, 25);
+            }
+            if (p4Char) {
+                const p4Sprite = sprites[p4Char]['idle'];
+                if (p4Sprite.complete && p4Sprite.naturalWidth > 0) {
+                    ctx.drawImage(p4Sprite, 800, 100, 370, 450); // Position next to opponent
+                }
+                ctx.fillStyle = 'yellow';
+                ctx.font = '24px Orbitron';
+                ctx.textAlign = 'right';
+                ctx.fillText(p4Char, canvas.width - 10, 95);
+            }
+
+            ctx.fillStyle = 'white';
+            ctx.font = '32px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('', canvas.width / 2, 100);
+        }
+
+        drawStartScreen();
+    </script>
+</body>
+</html>

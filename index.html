@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Fighters</title>
+        <meta property="og:title" content="Campus Fighters (Use Laptop)" />
+        <meta property="og:description" content="Battle your BSIT classmates from SLSU in this story-driven fighting game where pride, power, and friendship collide." />
+        <meta property="og:image" content="https://i.imgur.com/jp8MZKv.jpeg" />
+        <meta property="og:url" content="https://bsit2bcampusfighters.netlify.app" />
+        <meta property="og:type" content="website" />
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #000;
+        }
+        canvas {
+            border: 3px solid black;
+            display: block;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        #startScreen {
+            position: absolute;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            color: rgb(255, 255, 255);
+            text-shadow: 3px 3px 6px rgb(0, 0, 0);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 1200px;
+            height: 510px;
+            background: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2;
+        }
+
+        #loadingScreen {
+            position: absolute;
+            font-family: 'Orbitron', sans-serif;
+            text-align: center;
+            color: rgb(255, 255, 255);
+            text-shadow: 3px 3px 6px rgb(0, 0, 0);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 1200px;
+            height: 510px;
+            background: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2;
+        }
+        #startScreen h2 {
+            font-size: 48px;
+            font-family: 'Orbitron', sans-serif;
+            color: #f3a33d;
+            animation: blink 0.8s step-end infinite;
+            margin-bottom: 20px;
+        }
+        #startScreen p {
+            font-size: 32px;
+            color: white;
+            animation: blink 0.8s step-end infinite;
+        }
+        #loadingScreen h2 {
+            font-size: 48px;
+            color: white;
+        }
+        #loadingBar {
+            display: none;
+            width: 60%;
+            max-width: 400px;
+            background-color: #f3a33d;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 20px auto;
+        }
+        #loadingProgress {
+            display: none;
+            height: 30px;
+            width: 0;
+            background-color: #257fc1;
+            transition: width 0.1s;
+        }
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="1200" height="510"></canvas>
+    <div id="startScreen" style="display: none;">
+        <p>Press Any Key to Start</p>
+    </div>
+    <div id="loadingScreen" style="display: flex;">
+        <br><br><br><br><br><br>
+        <h2>Loading...</h2>
+        <p> Note:<br>• Open settings to see the game controls<br>• If your browser is still loading, do not press anything yet</p>
+        <div id="loadingBar">
+            <div id="loadingProgress"></div>
+        </div>
+    </div>
+    <audio id="menuMusic" src="menu_music.mp3" loop></audio>
+    <audio id="startSound" src="start_sound.mp3"></audio>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const startScreen = document.getElementById('startScreen');
+        const loadingScreen = document.getElementById('loadingScreen');
+        const loadingProgress = document.getElementById('loadingProgress');
+        const loadingBar = document.getElementById('loadingBar');
+        const menuMusic = document.getElementById('menuMusic');
+        const startSound = document.getElementById('startSound');
+
+        let gameStarted = false;
+        const loadingTime = 15000; // 15 seconds in milliseconds
+
+        const startScreenBackground = new Image();
+        startScreenBackground.src = 'start_screen.png';
+        startScreenBackground.onload = () => {
+            drawStartScreen();
+        };
+        startScreenBackground.onerror = () => console.error('Failed to load start screen background');
+
+        function drawStartScreen() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (startScreenBackground.complete && startScreenBackground.naturalWidth > 0) {
+                ctx.drawImage(startScreenBackground, 0, 0, canvas.width, canvas.height);
+            } else {
+                ctx.fillStyle = 'black';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+            // Wait for loading to complete before showing start screen
+            menuMusic.play().catch(e => console.log("Menu music play error:", e));
+        }
+
+        function startGame() {
+            if (!gameStarted) {
+                gameStarted = true;
+                startSound.currentTime = 0;
+                startSound.play().catch(e => console.log("Start sound play error:", e));
+                startScreen.style.display = 'none';
+                loadingScreen.style.display = 'flex';
+
+                setTimeout(() => {
+                    window.location.href = 'index5.html';
+                }, 1500); // Shorter delay before redirecting
+            }
+        }
+
+        // Start loading immediately
+        let loadingInterval = setInterval(() => {
+            const currentWidth = parseFloat(getComputedStyle(loadingProgress).width);
+            const newWidth = (currentWidth + (loadingBar.offsetWidth / (loadingTime / 100))) + 'px';
+            loadingProgress.style.width = newWidth;
+        }, 100); // Update every 100ms
+
+        setTimeout(() => {
+            clearInterval(loadingInterval);
+            loadingScreen.style.display = 'none';
+            startScreen.style.display = 'flex';
+            
+            // Set up final event listeners after loading completes
+            document.removeEventListener('keydown', tempHandler);
+            document.removeEventListener('click', tempHandler);
+            document.addEventListener('keydown', startGame);
+            document.addEventListener('click', startGame);
+        }, loadingTime); // Simulate a 15-second loading time
+
+        // These will be replaced with the final ones after loading
+        function tempHandler() {
+            // Just show we're still loading
+            console.log("Still loading...");
+        }
+        
+        document.addEventListener('keydown', tempHandler);
+        document.addEventListener('click', tempHandler);
+        
+        // This will be the final game start handler after loading
+        function startGameOnce() {
+            startGame();
+            document.removeEventListener('keydown', startGameOnce);
+            document.removeEventListener('click', startGameOnce);
+        }
+
+        drawStartScreen(); // Initial draw of the start screen
+    </script>
+</body>
+</html>
